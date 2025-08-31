@@ -3,7 +3,6 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
-from typing import Optional
 
 from backend.main import app
 from backend.config.config import RDS_ENGINE
@@ -41,28 +40,28 @@ class UserPreferences(Base):
 
 class RDS:
     def __init__(self):
+        Base.metadata.create_all(bind=RDS_ENGINE, checkfirst=True)
         self.SessionLocal = sessionmaker(bind=RDS_ENGINE, autocommit=False, autoflush=False)
-        Base.metadata.create_all(bind=RDS_ENGINE)
-        
-    def _raise_db_fetch_failure(self, func_name: str) -> None:
-        error_message = f"Failed to fetch data from RDS database in {func_name}"
-        app.state.logger.log_error(error_message)
-        raise RDSFetchError(error_message)
         
     def _raise_db_operation_failure(self, func_name: str, error: Exception) -> None:
         error_message = f"Failed to fulfill RDS database operation in {func_name}: {error}"
         app.state.logger.log_error(error_message)
         raise RDSOperationError(error_message) from error
+        
+    def _raise_db_fetch_failure(self, func_name: str) -> None:
+        error_message = f"Failed to fetch data from RDS database in {func_name}"
+        app.state.logger.log_error(error_message)
+        raise RDSFetchError(error_message)
 
     # User table
     def create_user(
             self,
             first_name: str,
-            username: Optional[str] = None, 
-            password: Optional[str] = None, 
-            email: Optional[str] = None,
-            oauth_provider: Optional[str] = None,
-            oauth_provider_user_id: Optional[str] = None,
+            username: str | None = None, 
+            password: str | None = None, 
+            email: str | None = None,
+            oauth_provider: str | None = None,
+            oauth_provider_user_id: str | None = None,
         ) -> int:
 
         db = self.SessionLocal()
@@ -143,10 +142,10 @@ class RDS:
     def update_user(
             self, 
             user_id: int, 
-            username: Optional[str] = None, 
-            password: Optional[str] = None, 
-            email: Optional[str] = None, 
-            first_name: Optional[str] = None,
+            username: str | None = None, 
+            password: str | None = None, 
+            email: str | None = None, 
+            first_name: str | None = None,
         ) -> None:
 
         db = self.SessionLocal()
