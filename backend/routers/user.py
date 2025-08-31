@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import APIRouter, Request, Response, Depends
 from pydantic import BaseModel, EmailStr
 from fastapi_csrf_protect import CsrfProtect
@@ -77,11 +75,11 @@ async def details(request: Request, csrf_protect: CsrfProtect = Depends()):
 @limiter.limit("30/minute")
 async def update(
     request: Request,
-    first_name: Optional[str] = None,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    email: Optional[str] = None,
-    theme: Optional[str] = None,
+    first_name: str | None = None,
+    username: str | None = None,
+    password: str | None = None,
+    email: EmailStr | None = None,
+    theme: str | None = None,
     csrf_protect: CsrfProtect = Depends(),
 ):
     await csrf_protect.validate_csrf(request)
@@ -97,7 +95,7 @@ async def update(
         if theme:
             app.state.rds.update_user_preference(user_id, theme)
         
-        return Response(status_code=200, content="Updated successfully")
+        return Response(status_code=200)
     
     except Exception as e:
         _raise_user_operation_error("update", e)
@@ -123,7 +121,7 @@ async def delete(
         S3.delete_all_snaps(user_id)
         MongoDB.delete_all_user_img_tags_and_captions(user_id)
         
-        return Response(status_code=200, content="Account deleted successfully")
+        return Response(status_code=200)
     
     except Exception as e:
         _raise_user_operation_error("delete", e)

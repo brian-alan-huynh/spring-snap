@@ -108,7 +108,7 @@ async def google_auth(request: Request):
 
         session_key = signup_or_login_oauth(first_name, "google", oauth_user_id)
         
-        return redirect_and_set_cookie(session_key)
+        return redirect_and_set_cookie(session_key, "google")
     
     except Exception as e:
         _raise_auth_operation_error("google_auth", e)
@@ -134,7 +134,7 @@ async def facebook_auth(request: Request):
         
         session_key = signup_or_login_oauth(first_name, "facebook", oauth_user_id)
         
-        return redirect_and_set_cookie(session_key)
+        return redirect_and_set_cookie(session_key, "facebook")
     
     except Exception as e:
         _raise_auth_operation_error("facebook_auth", e)
@@ -161,7 +161,7 @@ async def apple_auth(request: Request):
         
         session_key = signup_or_login_oauth(first_name, "apple", oauth_user_id)
         
-        return redirect_and_set_cookie(session_key)
+        return redirect_and_set_cookie(session_key, "apple")
     
     except Exception as e:
         _raise_auth_operation_error("apple_auth", e)
@@ -242,7 +242,7 @@ async def verify_otp(
         if not res:
             return Response(status_code=401, content="Your code is incorrect! Please try again!")
     
-        return "Verification successful"
+        return Response(status_code=200)
     
     except Exception as e:
         _raise_auth_operation_error("verify_otp", e)

@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 # Pydantic models
-class AllSnapsResponse(BaseModel):
+class SnapData(BaseModel):
     img_url: str
     created_at: str
     file_size: int
@@ -46,7 +46,7 @@ def _raise_snap_operation_error(func_name: str, error: Exception) -> None:
     app.state.logger.log_error(error_message)
     raise SnapError(error_message) from error
 
-@router.get("/all", response_model=list[AllSnapsResponse])
+@router.get("/all", response_model=list[SnapData])
 @limiter.limit("30/minute")
 async def all(request: Request, csrf_protect: CsrfProtect = Depends()):
     await csrf_protect.validate_csrf(request)
