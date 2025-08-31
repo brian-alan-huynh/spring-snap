@@ -9,8 +9,8 @@ env = os.getenv
 class Settings(BaseSettings):
     env = "dev" # "prod" in production
     app_name = "Firesnaps"
-    cors_origins = ["https://firesnaps.co"] if env == "prod" else ["http://localhost:3000", "https://firesnaps.co"]
-    trusted_hosts = ["api.firesnaps.co"] if env == "prod" else ["localhost", "127.0.0.1", "api.firesnaps.co"]
+    cors_origins = ["https://firesnaps.org"] if env == "prod" else ["http://localhost:3000", "https://firesnaps.org"]
+    trusted_hosts = ["api.firesnaps.org"] if env == "prod" else ["localhost", "127.0.0.1", "api.firesnaps.org"]
     
     csrf_secret_key = env("APP_CSRF_SECRET_KEY")
     csrf_cookie_samesite = "lax"
