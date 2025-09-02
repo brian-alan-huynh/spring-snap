@@ -11,7 +11,7 @@ class Logging:
     def __init__(self):
         self.loki_handler = logging_loki.LokiHandler(
             url=env("GRAFANA_LOKI_URL"),
-            tags={ "application": "five-snaps" },
+            tags={ "application": "spring-snap" },
             auth=(env("GRAFANA_LOKI_USERNAME"), env("GRAFANA_LOKI_PASSWORD")),
             version="1",
         )
@@ -21,7 +21,7 @@ class Logging:
             level=logging.ERROR,
         )
 
-        self.logger = logging.getLogger("five_snaps_error_logger")
+        self.logger = logging.getLogger("spring_snap_error_logger")
         self.logger.setLevel(logging.ERROR)
         self.logger.addHandler(self.loki_handler)
 
