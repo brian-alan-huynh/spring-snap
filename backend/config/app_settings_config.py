@@ -8,7 +8,7 @@ env = os.getenv
 
 class Settings(BaseSettings):
     env = "dev" # "prod" in production
-    app_name = "Spring Snap"
+    app_name = "Springsnap"
     cors_origins = ["https://springsnap.org"] if env == "prod" else ["http://localhost:3000", "https://springsnap.org"]
     trusted_hosts = ["api.springsnap.org"] if env == "prod" else ["localhost", "127.0.0.1", "api.springsnap.org"]
     
