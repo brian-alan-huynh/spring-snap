@@ -6,6 +6,8 @@ env/
 .venv
 *.tfvars
 *.tfstate
+*.tfstate.lock.info
+**/.terraform/
 .vscode/
 node_modules/
 *.iml
