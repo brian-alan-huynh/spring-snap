@@ -1,10 +1,8 @@
 requests
 fastapi
-uvicorn[standard]
 gunicorn
 python-dotenv
 pydantic
-pytest
 confluent-kafka
 redis[hiredis]
 fastapi-csrf-protect
