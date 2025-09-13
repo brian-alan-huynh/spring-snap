@@ -61,9 +61,11 @@ class TestUserDetails:
         mock_s3.get_snap_count.return_value = 5
         
         response = client.get("/api/v1/user/details")
+        
         assert response.status_code == 200
         
         data = response.json()
+        
         assert data["is_oauth"] == False
         assert data["username"] == "johndoe"
         assert data["email"] == "john@example.com"
@@ -80,9 +82,11 @@ class TestUserDetails:
         mock_s3.get_snap_count.return_value = 3
         
         response = client.get("/api/v1/user/details")
+        
         assert response.status_code == 200
         
         data = response.json()
+        
         assert data["is_oauth"] == True
         assert data["first_name"] == "John"
         assert data["snap_count"] == 3
@@ -92,6 +96,7 @@ class TestUserDetails:
     @patch("backend.infra.sessions.Redis")
     def test_details_exception(self, mock_redis, mock_csrf):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.side_effect = Exception("Redis error")
         
         response = client.get("/api/v1/user/details")
@@ -101,6 +106,7 @@ class TestUserUpdate:
     @patch("backend.infra.sessions.Redis")
     def test_update_user_only_success(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         
         response = client.put("/api/v1/user/update", json={
@@ -119,6 +125,7 @@ class TestUserUpdate:
     @patch("backend.infra.sessions.Redis")
     def test_update_with_theme_success(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         
         response = client.put("/api/v1/user/update", json={
@@ -131,6 +138,7 @@ class TestUserUpdate:
         app.state.rds.update_user.assert_called_with(
             "test_user_id", "NewName", None, None, None
         )
+        
         app.state.rds.update_user_preference.assert_called_with(
             "test_user_id", "dark"
         )
@@ -138,6 +146,7 @@ class TestUserUpdate:
     @patch("backend.infra.sessions.Redis")
     def test_update_no_fields_success(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         
         response = client.put("/api/v1/user/update", json={})
@@ -151,6 +160,7 @@ class TestUserUpdate:
     @patch("backend.infra.sessions.Redis")
     def test_update_exception(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         app.state.rds.update_user.side_effect = Exception("Database error")
         
@@ -161,6 +171,7 @@ class TestUserDelete:
     @patch("backend.infra.sessions.Redis")
     def test_delete_account_success(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         
         response = client.delete("/api/v1/user/account")
@@ -175,6 +186,7 @@ class TestUserDelete:
     @patch("backend.infra.sessions.Redis")
     def test_delete_account_exception(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         app.state.rds.delete_user.side_effect = Exception("Database error")
         
@@ -186,6 +198,7 @@ class TestRateLimiting:
     @patch("backend.infra.storage.S3")
     def test_details_rate_limit(self, mock_s3, mock_redis, mock_csrf, mock_session, normal_user_data):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         app.state.rds.read_user.return_value = normal_user_data
         app.state.rds.read_user_preference.return_value = {}
@@ -200,6 +213,7 @@ class TestRateLimiting:
     @patch("backend.infra.sessions.Redis")
     def test_update_rate_limit(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         
         # Simulate rate limit
@@ -212,17 +226,20 @@ class TestErrorHandling:
     @patch("backend.infra.sessions.Redis")
     def test_user_error_logging(self, mock_redis, mock_csrf):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.side_effect = Exception("Test error")
         
         client.get("/api/v1/user/details")
         
         app.state.logger.log_error.assert_called_once()
         error_call = app.state.logger.log_error.call_args[0][0]
+        
         assert "Failed to perform user operation in details" in error_call
 
     @patch("backend.infra.sessions.Redis")
     def test_update_error_logging(self, mock_redis, mock_csrf, mock_session):
         client.cookies.set("session_key", "test_session")
+        
         mock_redis.get_session.return_value = mock_session
         app.state.rds.update_user.side_effect = Exception("Database error")
         
@@ -230,4 +247,5 @@ class TestErrorHandling:
         
         app.state.logger.log_error.assert_called_once()
         error_call = app.state.logger.log_error.call_args[0][0]
+        
         assert "Failed to perform user operation in update" in error_call
