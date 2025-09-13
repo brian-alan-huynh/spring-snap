@@ -84,6 +84,9 @@ class S3:
             
             return f"https://{BUCKET_NAME}.s3.{env("AWS_S3_REGION")}.amazonaws.com/{s3_key}", s3_key
         
+        except S3FileExtensionError:
+            raise
+        
         except ClientError as e:
             cls._raise_client_operation_error("upload_snap", e)
         
