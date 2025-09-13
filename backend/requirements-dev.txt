@@ -1,0 +1,12 @@
+pylint
+pytest
+pytest-asyncio
+pytest-cov
+black
+debugpy
+ipython
+isort
+flake8
+mypy
+watchdog
+rich
