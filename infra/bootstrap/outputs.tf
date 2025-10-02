@@ -1,6 +1,6 @@
 output "s3_bucket_name" {
   description = "Name of the S3 bucket that holds Terraform state and lock files"
-  value       = aws_s3_bucket.terraform_state.bucket
+  value       = aws_s3_bucket.terraform_state.id
 }
 
 output "s3_bucket_arn" {
@@ -18,7 +18,7 @@ output "backend_config" {
   value       = <<EOF
         terraform {
             backend "s3" {
-                bucket = "${aws_s3_bucket.terraform_state.bucket}"
+                bucket = "${aws_s3_bucket.terraform_state.id}"
                 key = "terraform.tfstate"
                 region = "${var.aws_region}"
                 encrypt = true

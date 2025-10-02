@@ -18,7 +18,6 @@ variable "environment" {
 variable "state_bucket_name" {
   description = "Name of the S3 bucket that will hold Terraform state and lock files"
   type        = string
-  default     = "springsnap-terraform-state-dev"
 
   validation {
     condition     = can(regex("^[a-z0-9-][a-z0-9-]*[a-z0-9]$", var.state_bucket_name)) && length(var.state_bucket_name) >= 3 && length(var.state_bucket_name) <= 63
