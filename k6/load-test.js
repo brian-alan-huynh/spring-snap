@@ -9,7 +9,7 @@ const WEB_URL = "https://springsnap.com";
 const errorRate = new Rate("error_rate");
 const apiLatency = new Trend("api_latency_ms");
 const webAppLatency = new Trend("web_app_latency_ms");
-const cloudfrontCacheHit = new Rate("cloudfront_cache_hits");
+const cloudfrontCacheHit = new Counter("cloudfront_cache_hits");
 
 const options = {
     scenarios: {
@@ -82,6 +82,10 @@ const setup = () => {
 const teardown = (data) => {
     console.log(data)
 }
+
+export default () => {
+    mainTestFlow();
+};
 
 const mainTestFlow = () => {
     group("1. Visit springsnap.com & load its assets", () => {
