@@ -6,6 +6,7 @@ output "bootstrap_servers" {
 output "secret_arn" {
   description = "Confluent Kafka API secret ARN"
   value       = aws_secretsmanager_secret.springsnap.arn
+  sensitive = true
 }
 
 # For use in outputs.tf to write in /backend/.env file
