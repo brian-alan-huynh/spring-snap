@@ -1,29 +1,14 @@
 output "s3_bucket_name" {
   description = "Name of the S3 bucket that holds Terraform state and lock files"
-  value       = aws_s3_bucket.terraform_state.id
+  value       = { for bucket_key, bucket in aws_s3_bucket.state : bucket_key => bucket.id }
 }
 
 output "s3_bucket_arn" {
   description = "ARN of the S3 bucket that holds Terraform state and lock files"
-  value       = aws_s3_bucket.terraform_state.arn
+  value       = { for bucket_key, bucket in aws_s3_bucket.state : bucket_key => bucket.arn }
 }
 
 output "s3_bucket_region" {
   description = "AWS region where the S3 bucket that holds Terraform state and lock files is stored"
-  value       = aws_s3_bucket.terraform_state.region
-}
-
-output "backend_config" {
-  description = "Terraform backend config block for the main/core infrastructure w/ S3 native state locking"
-  value       = <<EOF
-        terraform {
-            backend "s3" {
-                bucket = "${aws_s3_bucket.terraform_state.id}"
-                key = "terraform.tfstate"
-                region = "${var.aws_region}"
-                encrypt = true
-                use_lockfile = true
-            }
-        }
-    EOF
+  value       = { for bucket_key, bucket in aws_s3_bucket.state : bucket_key => bucket.region }
 }

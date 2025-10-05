@@ -16,12 +16,12 @@ terraform {
     }
     confluent = {
       source  = "confluentinc/confluent"
-      version = "~> 2.40.0"
+      version = "~> 2.4"
     }
   }
 
   backend "s3" {
-    bucket       = "springsnap-terraform-state-prod"
+    bucket       = "springsnap-state-prod"
     key          = "prod/terraform.tfstate"
     region       = "us-east-2"
     encrypt      = true

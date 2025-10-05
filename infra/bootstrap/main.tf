@@ -10,36 +10,42 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region = "us-east-2"
 
   default_tags {
     tags = {
       Project     = var.project_name
-      Environment = var.environment
       ManagedBy   = "Terraform"
       Purpose     = "TerraformState"
+      Owner = var.owner_email
     }
   }
 }
 
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = var.state_bucket_name
+resource "aws_s3_bucket" "state" {
+  for_each = var.state_bucket_names
+
+  bucket = each.value
 
   lifecycle {
     prevent_destroy = true
   }
 }
 
-resource "aws_s3_bucket_versioning" "terraform_state_versioning" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_versioning" "state" {
+  for_each = var.state_bucket_names
+
+  bucket = aws_s3_bucket.state[each.value].id
 
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_ssec" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "state_ssec" {
+  for_each = var.state_bucket_names
+
+  bucket = aws_s3_bucket.state[each.value].id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -50,8 +56,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_s
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "terraform_state_pab" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_public_access_block" "state_pab" {
+  for_each = var.state_bucket_names
+
+  bucket = aws_s3_bucket.state[each.value].id
 
   block_public_acls       = true
   block_public_policy     = true

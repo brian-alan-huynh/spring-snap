@@ -8,25 +8,25 @@ terraform {
     }
     mongodbatlas = {
       source  = "mongodb/mongodbatlas"
-      version = "~> 2.0.0"
+      version = "~> 2.0"
     }
     confluent = {
       source  = "confluentinc/confluent"
-      version = "~> 2.25.0"
+      version = "~> 2.4"
     }
   }
 
   backend "s3" {
-    bucket       = "springsnap-terraform-state-dev"
+    bucket       = "springsnap-state-dev"
     key          = "dev/terraform.tfstate"
-    region       = var.aws_region
+    region       = "us-east-2"
     encrypt      = true
     use_lockfile = true
   }
 }
 
 provider "aws" {
-  region = var.aws_region
+  region = "us-east-2"
 
   default_tags {
     tags = {
