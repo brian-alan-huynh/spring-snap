@@ -24,11 +24,6 @@ variable "environment" {
 variable "owner_email" {
   description = "Email address of the infra owner (used for tagging and notifications)"
   type        = string
-
-  validation {
-    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.owner_email))
-    error_message = "Owner email must be a valid email address"
-  }
 }
 
 variable "aws_region" {

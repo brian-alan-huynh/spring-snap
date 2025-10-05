@@ -14,10 +14,10 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = var.project_name
-      ManagedBy   = "Terraform"
-      Purpose     = "TerraformState"
-      Owner = var.owner_email
+      Project   = var.project_name
+      ManagedBy = "Terraform"
+      Purpose   = "TerraformState"
+      Owner     = var.owner_email
     }
   }
 }
