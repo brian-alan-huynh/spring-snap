@@ -63,7 +63,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name  = "springsnap-backend"
-      image = "${var.docker_registry}/${var.backend_image_name}:${var.image_tag}"
+      image = "${var.ecr_repository_url_backend}:latest"
 
       essential = true
 
@@ -160,7 +160,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name  = "springsnap-frontend"
-      image = "${var.docker_registry}/${var.frontend_image_name}:${var.image_tag}"
+      image = "${var.ecr_repository_url_frontend}:latest"
 
       essential = true
 

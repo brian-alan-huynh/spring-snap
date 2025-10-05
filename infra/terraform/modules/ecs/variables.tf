@@ -18,6 +18,16 @@ variable "ecs_task_role_arn" {
   type        = string
 }
 
+variable "ecr_repository_url_backend" {
+  description = "ECR repository URL"
+  type        = string
+}
+
+variable "ecr_repository_url_frontend" {
+  description = "ECR repository URL"
+  type        = string
+}
+
 variable "docker_registry" {
   description = "Docker registry URL (i.e, Docker Hub, ECR, etc)"
   type        = string
