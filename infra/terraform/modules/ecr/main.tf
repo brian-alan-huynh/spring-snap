@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "main" {
-    for_each = var.repository_app_names
+    for_each = toset(var.repository_app_names)
 
     name = "${var.name_prefix}-${each.value}"
     image_tag_mutability = "MUTABLE"
@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "main" {
 }
 
 resource "aws_ecr_lifecycle_policy" "main" {
-    for_each = var.repository_app_names
+    for_each = toset(var.repository_app_names)
 
     repository = aws_ecr_repository.main[each.value].name
 
