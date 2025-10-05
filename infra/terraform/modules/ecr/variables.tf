@@ -5,8 +5,8 @@ variable "name_prefix" {
 
 variable "repository_app_names" {
   description = "List of application names in Springsnap"
-  type        = list(string)
-  default     = ["backend", "frontend"]
+  type        = set(string)
+  default     = toset(["backend", "frontend"])
 }
 
 variable "kms_policy" {
