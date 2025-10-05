@@ -11,6 +11,6 @@ variable "owner_email" {
 
 variable "state_bucket_names" {
   description = "Names for the S3 bucket that will hold Terraform state and lock files for dev and prod"
-  type        = set(string)
-  default     = toset(["springsnap-state-dev", "springsnap-state-prod"])
+  type        = list(string)
+  default     = ["springsnap-state-dev", "springsnap-state-prod"]
 }

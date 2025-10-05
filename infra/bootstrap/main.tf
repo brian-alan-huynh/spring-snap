@@ -23,7 +23,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "state" {
-  for_each = var.state_bucket_names
+  for_each = toset(var.state_bucket_names)
 
   bucket = each.value
 
@@ -33,7 +33,7 @@ resource "aws_s3_bucket" "state" {
 }
 
 resource "aws_s3_bucket_versioning" "state" {
-  for_each = var.state_bucket_names
+  for_each = toset(var.state_bucket_names)
 
   bucket = aws_s3_bucket.state[each.value].id
 
@@ -43,7 +43,7 @@ resource "aws_s3_bucket_versioning" "state" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "state_ssec" {
-  for_each = var.state_bucket_names
+  for_each = toset(var.state_bucket_names)
 
   bucket = aws_s3_bucket.state[each.value].id
 
@@ -57,7 +57,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "state_ssec" {
 }
 
 resource "aws_s3_bucket_public_access_block" "state_pab" {
-  for_each = var.state_bucket_names
+  for_each = toset(var.state_bucket_names)
 
   bucket = aws_s3_bucket.state[each.value].id
 
