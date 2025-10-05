@@ -124,7 +124,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
 resource "aws_s3_bucket_intelligent_tiering_configuration" "main" {
   bucket = aws_s3_bucket.main.id
 
-  name   = "${var.name_prefix}-intelligent-tiering"
+  name = "${var.name_prefix}-intelligent-tiering"
 
   filter {
     prefix = ""
@@ -246,8 +246,8 @@ resource "aws_s3_bucket_cors_configuration" "main" {
 
 resource "aws_s3_bucket_metric" "main" {
   bucket = aws_s3_bucket.main.id
-  
-  name   = "${var.name_prefix}-metrics"
+
+  name = "${var.name_prefix}-metrics"
 
   filter {
     prefix = ""

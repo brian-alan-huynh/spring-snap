@@ -300,7 +300,7 @@ module "ecs" {
   ecs_task_role_arn                  = module.iam.ecs_task_role_arn
   ecs_task_execution_role_definition = module.iam.ecs_task_execution_role_definition
 
-  ecr_repository_url_backend = module.ecr.repository_url_backend
+  ecr_repository_url_backend  = module.ecr.repository_url_backend
   ecr_repository_url_frontend = module.ecr.repository_url_frontend
 
   environment    = var.environment
