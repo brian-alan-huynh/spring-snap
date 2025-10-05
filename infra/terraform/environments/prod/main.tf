@@ -300,6 +300,9 @@ module "ecs" {
   ecs_task_role_arn                  = module.iam.ecs_task_role_arn
   ecs_task_execution_role_definition = module.iam.ecs_task_execution_role_definition
 
+  ecr_repository_url_backend = module.ecr.repository_url_backend
+  ecr_repository_url_frontend = module.ecr.repository_url_frontend
+
   environment    = var.environment
   s3_bucket_name = module.s3.main_bucket_name
   rds_username   = module.rds.username
@@ -319,6 +322,16 @@ module "ecs" {
 
   nlb_target_group_arn  = module.nlb.target_group_arn
   nlb_security_group_id = module.nlb.security_group_id
+
+  kms_policy = data.aws_iam_policy_document.kms.json
+
+  tags = local.common_tags
+}
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  name_prefix = local.name_prefix
 
   kms_policy = data.aws_iam_policy_document.kms.json
 
