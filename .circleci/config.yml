@@ -1,0 +1,8 @@
+# ensure to do the exporting terraform outputs to .env
+# get the grafana api keys for dashboard and k6 and export these credentials to the .sh file
+# use terraform apply -auto-approve
+# run k6 load tests as the last .sh script, after running docker push to ecr; docker push to ecr comes after running terraform prod
+
+# in the dashboard, create a Context and environment variables within that Context called REDISCLOUD_ACCESS_KEY and REDISCLOUD_SECRET_KEY.
+# reference the redis credentials in these environment variables. then, in the jobs, run a command that exports REDISCLOUD_ACCESS_KEY and REDISCLOUD_SECRET_KEY
+# as the key and with the Context environment variables as the value
