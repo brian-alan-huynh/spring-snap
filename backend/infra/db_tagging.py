@@ -34,7 +34,7 @@ class MongoDB:
     def add_img_tags(cls, user_id: int, s3_key: str, tags: list[str]) -> None:
         try:
             message = {
-                "operation": "add_img_tags",
+                "operation": "mongodb.add_img_tags",
                 "user_id": user_id,
                 "s3_key": s3_key,
                 "tags": tags,
@@ -43,7 +43,7 @@ class MongoDB:
             }
             
             kafka_producer.produce(
-                topic="mongodb.add_img_tags",
+                topic="springsnap.mongodb",
                 key=str(user_id).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -65,13 +65,13 @@ class MongoDB:
     def write_img_caption(cls, s3_key: str, caption: str) -> None:
         try:
             message = {
-                "operation": "write_img_caption",
+                "operation": "mongodb.write_img_caption",
                 "s3_key": s3_key,
                 "caption": caption,
             }
             
             kafka_producer.produce(
-                topic="mongodb.write_img_caption",
+                topic="springsnap.mongodb",
                 key=str(s3_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -104,12 +104,12 @@ class MongoDB:
     def delete_img_tags_and_captions(cls, s3_key: str) -> None:
         try:
             message = {
-                "operation": "delete_img_tags_and_captions",
+                "operation": "mongodb.delete_img_tags_and_captions",
                 "s3_key": s3_key,
             }
             
             kafka_producer.produce(
-                topic="mongodb.delete_img_tags_and_captions",
+                topic="springsnap.mongodb",
                 key=str(s3_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -131,12 +131,12 @@ class MongoDB:
     def delete_all_user_img_tags_and_captions(cls, user_id: int) -> None:
         try:
             message = {
-                "operation": "delete_all_user_img_tags_and_captions",
+                "operation": "mongodb.delete_all_user_img_tags_and_captions",
                 "user_id": user_id,
             }
             
             kafka_producer.produce(
-                topic="mongodb.delete_all_user_img_tags_and_captions",
+                topic="springsnap.mongodb",
                 key=str(user_id).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )

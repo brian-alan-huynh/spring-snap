@@ -6,7 +6,7 @@ from confluent_kafka import Producer, Consumer
 from dotenv import load_dotenv
 
 from backend.main import app
-from backend.config.config import S3_CLIENT, BUCKET_NAME, REDIS_CLIENT, MONGO_COLLECTION
+from backend.config.config import S3_CLIENT, BUCKET_NAME, REDIS_CLIENT, MONGO_COLLECTION, KAFKA_BOOTSTRAP_SERVERS, KAFKA_API_KEY, KAFKA_API_SECRET
 
 class KafkaConsumeError(Exception):
     "Exception for Kafka consume operations"
@@ -48,38 +48,31 @@ load_dotenv()
 env = os.getenv
 
 kafka_producer = Producer({
-    "bootstrap.servers": env("KAFKA_BOOTSTRAP_SERVERS"),
+    "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
     "queue.buffering.max.messages": 100000,
     "queue.buffering.max.ms": 500,
     "compression.type": "lz4",
     "security.protocol": "SASL_SSL",
     "sasl.mechanisms": "PLAIN",
-    "sasl.username": env("KAFKA_API_KEY"),
-    "sasl.password": env("KAFKA_API_SECRET")
+    "sasl.username": KAFKA_API_KEY,
+    "sasl.password": KAFKA_API_SECRET
 })
 
 kafka_consumer = Consumer({
-    "bootstrap.servers": env("KAFKA_BOOTSTRAP_SERVERS"),
-    "group.id": "msg-queue-for-external-services",
+    "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
+    "group.id": "springsnap-kafka-group",
     "auto.offset.reset": "earliest",
     "enable.auto.commit": False,
     "security.protocol": "SASL_SSL",
     "sasl.mechanisms": "PLAIN",
-    "sasl.username": env("KAFKA_API_KEY"),
-    "sasl.password": env("KAFKA_API_SECRET")
+    "sasl.username": KAFKA_API_KEY,
+    "sasl.password": KAFKA_API_SECRET
 })
 
 kafka_consumer.subscribe([
-    "s3.delete_snap",
-    "s3.delete_all_snaps",
-    "redis.add_new_session",
-    "redis.place_thumbnail_img_url",
-    "redis.delete_session",
-    "redis.add_otp",
-    "mongodb.add_img_tags",
-    "mongodb.write_img_caption",
-    "mongodb.delete_img_tags_and_captions",
-    "mongodb.delete_all_user_img_tags_and_captions",
+    "springsnap.s3",
+    "springsnap.redis",
+    "springsnap.mongodb",
 ])
 
 BATCH_SIZE = 150
@@ -100,7 +93,7 @@ def process_batch(messages: list):
             operation = record_msg.get("operation")
         
             match operation:
-                case "delete_snap":
+                case "s3.delete_snap":
                     s3_key = record_msg["s3_key"]
                     
                     S3_CLIENT.delete_object(
@@ -108,7 +101,7 @@ def process_batch(messages: list):
                         Key=s3_key
                     )
                     
-                case "delete_all_snaps":
+                case "s3.delete_all_snaps":
                     user_id = record_msg["user_id"]
                     
                     objects_to_delete = []
@@ -123,7 +116,7 @@ def process_batch(messages: list):
                         Delete={ "Objects": objects_to_delete }
                     )
                 
-                case "add_new_session":
+                case "redis.add_new_session":
                     session_key = record_msg["session_key"]
                     user_id = record_msg["user_id"]
                     thumbnail_img_url = record_msg["thumbnail_img_url"]
@@ -137,23 +130,23 @@ def process_batch(messages: list):
                     
                     REDIS_CLIENT.expire(session_key, 60 * 60 * 24 * 7 * 4 * 6)
                     
-                case "place_thumbnail_img_url":
+                case "redis.place_thumbnail_img_url":
                     session_key = record_msg["session_key"]
                     thumbnail_img_url = record_msg["thumbnail_img_url"]
                     
                     REDIS_CLIENT.hset(session_key, "thumbnail_img_url", thumbnail_img_url)
                     
-                case "delete_session":
+                case "redis.delete_session":
                     session_key = record_msg["session_key"]
                     REDIS_CLIENT.delete(session_key)
                     
-                case "add_otp":
+                case "redis.add_otp":
                     otp = record_msg["otp"]
                     email = record_msg["email"]
                     
                     REDIS_CLIENT.setex(key=email, time=900, value=otp)
                     
-                case "add_img_tags":
+                case "mongodb.add_img_tags":
                     user_id = record_msg["user_id"]
                     s3_key = record_msg["s3_key"]
                     tags = record_msg["tags"]
@@ -168,7 +161,7 @@ def process_batch(messages: list):
                         "created_at": created_at,
                     })
                     
-                case "write_img_caption":
+                case "mongodb.write_img_caption":
                     s3_key = record_msg["s3_key"]
                     caption = record_msg["caption"]
                     
@@ -177,11 +170,11 @@ def process_batch(messages: list):
                         { "$set": { "caption": caption } },
                     )
                     
-                case "delete_img_tags_and_captions":
+                case "mongodb.delete_img_tags_and_captions":
                     s3_key = record_msg["s3_key"]
                     MONGO_COLLECTION.delete_one({ "s3_key": s3_key })
                     
-                case "delete_all_user_img_tags_and_captions":
+                case "mongodb.delete_all_user_img_tags_and_captions":
                     user_id = record_msg["user_id"]
                     MONGO_COLLECTION.delete_many({ "user_id": user_id })
                     
@@ -224,4 +217,3 @@ def run_consumer(event):
         
         except Exception as e:
             _raise_kafka_consume_error(e)
-

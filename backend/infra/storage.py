@@ -139,12 +139,12 @@ class S3:
     def delete_snap(cls, s3_key: str) -> None:
         try:
             message = {
-                "operation": "delete_snap",
+                "operation": "s3.delete_snap",
                 "s3_key": s3_key,
             }
 
             kafka_producer.produce(
-                topic="s3.delete_snap",
+                topic="springsnap.s3",
                 key=str(s3_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -166,12 +166,12 @@ class S3:
     def delete_all_snaps(cls, user_id: int) -> None:
         try:
             message = {
-                "operation": "delete_all_snaps",
+                "operation": "s3.delete_all_snaps",
                 "user_id": user_id,
             }
 
             kafka_producer.produce(
-                topic="s3.delete_all_snaps",
+                topic="springsnap.s3",
                 key=str(user_id).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )

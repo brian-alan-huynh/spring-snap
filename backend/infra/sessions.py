@@ -44,7 +44,7 @@ class Redis:
             session_key = f"session:{session_id}"
             
             message = {
-                "operation": "add_new_session",
+                "operation": "redis.add_new_session",
                 "session_key": session_key,
                 "user_id": user_id,
                 "thumbnail_img_url": "",
@@ -52,7 +52,7 @@ class Redis:
             }
 
             kafka_producer.produce(
-                topic="redis.add_new_session",
+                topic="springsnap.redis",
                 key=str(session_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -82,13 +82,13 @@ class Redis:
     def place_thumbnail_img_url(cls, session_key: str, thumbnail_img_url: str) -> None:
         try:
             message = {
-                "operation": "place_thumbnail_img_url",
+                "operation": "redis.place_thumbnail_img_url",
                 "session_key": session_key,
                 "thumbnail_img_url": thumbnail_img_url,
             }
 
             kafka_producer.produce(
-                topic="redis.place_thumbnail_img_url",
+                topic="springsnap.redis",
                 key=str(session_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -110,12 +110,12 @@ class Redis:
     def delete_session(cls, session_key: str) -> None:
         try:
             message = {
-                "operation": "delete_session",
+                "operation": "redis.delete_session",
                 "session_key": session_key,
             }
 
             kafka_producer.produce(
-                topic="redis.delete_session",
+                topic="springsnap.redis",
                 key=str(session_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -137,13 +137,13 @@ class Redis:
     def add_otp(cls, otp: int, email: str) -> None:
         try:
             message = {
-                "operation": "add_otp",
+                "operation": "redis.add_otp",
                 "otp": otp,
                 "email": email,
             }
 
             kafka_producer.produce(
-                topic="redis.add_otp",
+                topic="springsnap.redis",
                 key=str(email).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
