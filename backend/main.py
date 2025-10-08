@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
     logging = Logging()
     
     app.state.rds = rds
-    app.state.logging = logging
+    app.state.logger = logging
     
     stop_event = threading.Event()
     thread = threading.Thread(target=run_consumer, args=(stop_event,), daemon=True)
