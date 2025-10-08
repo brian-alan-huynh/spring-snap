@@ -1,21 +1,7 @@
-output "username" {
-  description = "Username for the RDS database"
-  value       = aws_db_instance.main.username
-}
-
-output "db_host" {
-  description = "Host for the RDS database"
-  value       = aws_db_instance.main.address
-}
-
-output "db_port" {
-  description = "Port for the RDS database"
-  value       = aws_db_instance.main.port
-}
-
-output "db_name" {
-  description = "Name for the RDS database"
-  value       = aws_db_instance.main.db_name
+output "secret_arn" {
+  description = "ARN for the RDS database secret"
+  value       = aws_secretsmanager_secret.main.arn
+  sensitive   = true
 }
 
 output "identifier" {

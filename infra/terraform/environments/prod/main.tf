@@ -4,19 +4,27 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 5.0.0"
+    }
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.5.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 5.0"
+      version = "~> 5.0.0"
+    }
+    rediscloud = {
+      source  = "RedisLabs/rediscloud"
+      version = "~> 2.4.0"
     }
     mongodbatlas = {
       source  = "mongodb/mongodbatlas"
-      version = "~> 2.0"
+      version = "~> 2.0.0"
     }
     confluent = {
       source  = "confluentinc/confluent"
-      version = "~> 2.4"
+      version = "~> 2.4.0"
     }
   }
 
@@ -66,6 +74,8 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+provider "rediscloud" {}
+
 provider "mongodbatlas" {
   public_key  = var.mongodbatlas_public_key
   private_key = var.mongodbatlas_private_key
@@ -76,30 +86,15 @@ provider "confluent" {
   cloud_api_secret = var.confluent_cloud_api_secret
 }
 
-locals {
-  name_prefix = "${var.project_name}-${var.environment}"
-
-  common_tags = {
-    Environment        = var.environment
-    Project            = var.project_name
-    ManagedBy          = "Terraform"
-    Purpose            = "TerraformInfrastructure"
-    Owner              = var.owner_email
-    CostCenter         = "engineering"
-    Compliance         = "required"
-    DataClassification = "confidential"
-    BackupRequired     = "yes"
-    MonitoringRequired = "yes"
-  }
-
-  detailed_monitoring_enabled = true
-}
-
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_availability_zones" "available" {
   state = "available"
+}
+
+data "http" "local_public_ip" {
+  url = "https://ifconfig.me/ip"
 }
 
 data "aws_ami" "amazon_linux_2" {
@@ -124,7 +119,7 @@ data "aws_iam_policy_document" "kms" {
     principals {
       type = "AWS"
       identifiers = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
+        "arn:aws:iam::${local.account_id}:root",
         data.aws_caller_identity.current.arn
       ]
     }
@@ -159,7 +154,7 @@ data "aws_iam_policy_document" "kms" {
 
     principals {
       type        = "Service"
-      identifiers = ["logs.${data.aws_region.current.name}.amazonaws.com"]
+      identifiers = ["logs.${local.region}.amazonaws.com"]
     }
 
     actions = [
@@ -175,7 +170,7 @@ data "aws_iam_policy_document" "kms" {
     condition {
       test     = "ArnEquals"
       variable = "kms:EncryptionContext:aws:logs:arn"
-      values   = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
+      values   = ["arn:aws:logs:${local.region}:${local.account_id}:*"]
     }
   }
 
@@ -185,7 +180,7 @@ data "aws_iam_policy_document" "kms" {
 
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+      identifiers = ["arn:aws:iam::${local.account_id}:root"]
     }
 
     actions = [
@@ -208,19 +203,54 @@ data "cloudflare_zone" "springsnap_org" {
   name = "springsnap.org"
 }
 
+data "rediscloud_payment_method" "visa" {
+  card_type = "Visa"
+}
+
+data "rediscloud_essentials_plan" "free" {
+  size                  = 30
+  size_measurement_unit = "MB"
+  cloud_provider        = "AWS"
+  region                = "us-east-2"
+  availability          = "No replication"
+  support_replication   = false
+}
+
+locals {
+  name_prefix = "${var.project_name}-${var.environment}"
+  account_id  = data.aws_caller_identity.current.account_id
+  region      = data.aws_region.current.name
+  kms_policy  = data.aws_iam_policy_document.kms.json
+
+  common_tags = {
+    Environment        = var.environment
+    Project            = var.project_name
+    ManagedBy          = "Terraform"
+    Purpose            = "TerraformInfrastructure"
+    Owner              = var.owner_email
+    CostCenter         = "engineering"
+    Compliance         = "required"
+    DataClassification = "confidential"
+    BackupRequired     = "yes"
+    MonitoringRequired = "yes"
+  }
+
+  detailed_monitoring_enabled = true
+}
+
 module "vpc" {
   source = "../../modules/vpc"
 
   name_prefix = local.name_prefix
 
-  vpc_cidr           = var.vpc_cidr
+  vpc_cidr           = var.vpc_cidr_block
   availability_zones = data.aws_availability_zones.available.names
 
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
 
-  region     = data.aws_region.current.name
-  kms_policy = data.aws_iam_policy_document.kms.json
+  region     = local.region
+  kms_policy = local.kms_policy
 
   tags = local.common_tags
 }
@@ -230,18 +260,19 @@ module "rds" {
 
   name_prefix = local.name_prefix
 
-  instance_class  = var.db_instance_class
-  db_name         = var.db_name
-  db_username     = var.db_username
-  db_app_username = var.db_app_username
+  db_instance_class = var.rds_db_instance_class
+  db_name           = var.rds_db_name
+  db_username       = var.rds_db_username
+  db_app_username   = var.rds_db_app_username
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnet_ids
 
   allowed_security_group_ids = [module.ec2.ec2_security_group_id]
+  local_cidr_block           = "${chomp(data.http.local_public_ip.response_body)}/32"
 
   environment = var.environment
-  kms_policy  = data.aws_iam_policy_document.kms.json
+  kms_policy  = local.kms_policy
 
   tags = local.common_tags
 }
@@ -251,9 +282,10 @@ module "s3" {
 
   name_prefix = local.name_prefix
 
-  # Once initially run, uncomment the line below
-  # cloudfront_distribution_arn = module.cloudfront.distribution_arn
-  frontend_domain_name = var.frontend_domain_name
+  environment                 = var.environment
+  account_id                  = local.account_id
+  cloudfront_distribution_arn = module.cloudfront.distribution_arn
+  frontend_domain_name        = var.frontend_domain_name
 
   tags = local.common_tags
 }
@@ -270,10 +302,6 @@ module "ec2" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnet_ids
   vpc_cidr   = module.vpc.vpc_cidr_block
-
-  min_size         = var.asg_min_size
-  max_size         = var.asg_max_size
-  desired_capacity = var.asg_desired_capacity
 
   target_group_arns = [module.nlb.target_group_arn]
 
@@ -303,19 +331,34 @@ module "ecs" {
   ecr_repository_url_backend  = module.ecr.repository_url_backend
   ecr_repository_url_frontend = module.ecr.repository_url_frontend
 
-  environment    = var.environment
-  s3_bucket_name = module.s3.main_bucket_name
-  rds_username   = module.rds.username
-  rds_db_host    = module.rds.db_host
-  rds_db_name    = module.rds.db_name
-  rds_db_port    = module.rds.db_port
+  s3_bucket_name             = module.s3.main_bucket_name
+  kafka_bootstrap_servers    = module.confluent_kafka.bootstrap_servers
+  mongodb_db_name            = var.mongodb_db_name
+  mongodb_db_collection_name = var.mongodb_db_collection_name
+  roboflow_model_path        = var.roboflow_model_path
+  smtp_server                = var.smtp_server
+  smtp_server_port           = var.smtp_server_port
 
-  kafka_bootstrap_servers = module.confluent_kafka.bootstrap_servers
-  kafka_secret_arn        = module.confluent_kafka.secret_arn
-  mongodb_secret_arn      = module.mongodb.secret_arn
+  rds_secret_arn         = module.rds.secret_arn
+  redis_secret_arn       = module.redis.secret_arn
+  kafka_secret_arn       = module.confluent_kafka.secret_arn
+  mongodb_secret_arn     = module.mongodb.secret_arn
+  google_client_id       = var.google_client_id
+  google_client_secret   = var.google_client_secret
+  facebook_client_id     = var.facebook_client_id
+  facebook_client_secret = var.facebook_client_secret
+  apple_client_id        = var.apple_client_id
+  apple_client_secret    = var.apple_client_secret
+  owner_email            = var.owner_email
+  roboflow_api_key       = var.roboflow_api_key
+  smtp_email_app_pass    = var.smtp_email_app_pass
+  grafana_loki_url       = var.grafana_loki_url
+  grafana_loki_username  = var.grafana_loki_username
+  grafana_loki_password  = var.grafana_loki_password
+  app_csrf_secret_key    = var.app_csrf_secret_key
 
-  region     = data.aws_region.current.name
-  account_id = data.aws_caller_identity.current.account_id
+  region     = local.region
+  account_id = local.account_id
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnet_ids
@@ -323,7 +366,7 @@ module "ecs" {
   nlb_target_group_arn  = module.nlb.target_group_arn
   nlb_security_group_id = module.nlb.security_group_id
 
-  kms_policy = data.aws_iam_policy_document.kms.json
+  kms_policy = local.kms_policy
 
   tags = local.common_tags
 }
@@ -333,7 +376,7 @@ module "ecr" {
 
   name_prefix = local.name_prefix
 
-  kms_policy = data.aws_iam_policy_document.kms.json
+  kms_policy = local.kms_policy
 
   tags = local.common_tags
 }
@@ -347,7 +390,7 @@ module "nlb" {
   vpc_cidr   = module.vpc.vpc_cidr_block
   subnet_ids = module.vpc.private_subnet_ids
 
-  access_logs_bucket = module.s3.logging_bucket_name
+  s3_logging_bucket_name = module.s3.logging_bucket_name
 
   tags = local.common_tags
 }
@@ -369,12 +412,8 @@ module "api_gateway" {
   cors_headers = ["content-type", "x-amz-date", "authorization", "x-api-key", "x-amz-security-token"]
   cors_methods = ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"]
 
-  throttle_burst_limit = var.api_throttle_burst_limit
-  throttle_rate_limit  = var.api_throttle_rate_limit
-
-  enable_waf     = true
-  web_acl_arn    = module.waf.regional_waf_web_acl_arn
-  waf_rate_limit = var.waf_rate_limit
+  enable_waf  = true
+  web_acl_arn = module.waf.regional_waf_web_acl_arn
 
   tags = local.common_tags
 }
@@ -390,13 +429,6 @@ module "cloudfront" {
 
   origins = [
     {
-      domain_name              = module.s3.main_bucket_domain_name
-      origin_id                = "s3-origin"
-      origin_path              = "/"
-      custom_origin_config     = null
-      origin_access_control_id = module.s3.main_bucket_oac
-    },
-    {
       domain_name = replace(module.api_gateway.api_custom_domain_name_target, "https://", "")
       origin_id   = "api-gateway-origin"
       origin_path = "/"
@@ -406,6 +438,13 @@ module "cloudfront" {
         origin_protocol_policy = "https-only"
         origin_ssl_protocols   = ["TLSv1.2"]
       }
+    },
+    {
+      domain_name              = module.s3.main_bucket_domain_name
+      origin_id                = "s3-origin"
+      origin_path              = "/"
+      custom_origin_config     = null
+      origin_access_control_id = module.s3.main_bucket_oac
     }
   ]
 
@@ -443,14 +482,13 @@ module "cloudfront" {
   }
 
   logging_config = {
-    bucket          = module.s3.cloudfront_logs_bucket_name
+    bucket          = module.s3.logging_bucket_name
     prefix          = "cloudfront-logs/"
     include_cookies = false
   }
 
-  aliases     = [var.api_domain_name]
-  price_class = var.cloudfront_price_class
-  web_acl_id  = module.waf.cloudfront_waf_web_acl_arn
+  aliases    = [var.api_domain_name]
+  web_acl_id = module.waf.cloudfront_waf_web_acl_arn
 
   cors_origins = [var.frontend_domain_name]
 
@@ -473,14 +511,41 @@ module "iam" {
 
   name_prefix = local.name_prefix
 
-  s3_bucket_arn      = module.s3.main_bucket_arn
-  rds_db_username    = var.db_username
-  rds_resource_id    = module.rds.resource_id
-  kafka_secret_arn   = module.confluent_kafka.secret_arn
-  mongodb_secret_arn = module.mongodb.secret_arn
+  account_id = local.account_id
+  region     = local.region
 
-  account_id = data.aws_caller_identity.current.account_id
-  region     = data.aws_region.current.name
+  s3_bucket_arn   = module.s3.main_bucket_arn
+  rds_db_username = var.rds_db_username
+  rds_resource_id = module.rds.resource_id
+
+  rds_secret_arn                    = module.rds.secret_arn
+  redis_secret_arn                  = module.redis.secret_arn
+  kafka_secret_arn                  = module.confluent_kafka.secret_arn
+  mongodb_secret_arn                = module.mongodb.secret_arn
+  google_client_id_secret_arn       = module.ecs.google_client_id_secret_arn
+  google_client_secret_secret_arn   = module.ecs.google_client_secret_secret_arn
+  facebook_client_id_secret_arn     = module.ecs.facebook_client_id_secret_arn
+  facebook_client_secret_secret_arn = module.ecs.facebook_client_secret_secret_arn
+  apple_client_id_secret_arn        = module.ecs.apple_client_id_secret_arn
+  apple_client_secret_secret_arn    = module.ecs.apple_client_secret_secret_arn
+  owner_email_secret_arn            = module.ecs.owner_email_secret_arn
+  roboflow_api_key_secret_arn       = module.ecs.roboflow_api_key_secret_arn
+  smtp_email_app_pass_secret_arn    = module.ecs.smtp_email_app_pass_secret_arn
+  grafana_loki_url_secret_arn       = module.ecs.grafana_loki_url_secret_arn
+  grafana_loki_username_secret_arn  = module.ecs.grafana_loki_username_secret_arn
+  grafana_loki_password_secret_arn  = module.ecs.grafana_loki_password_secret_arn
+  app_csrf_secret_key_secret_arn    = module.ecs.app_csrf_secret_key_secret_arn
+
+  tags = local.common_tags
+}
+
+module "grafana" {
+  source = "../../modules/grafana"
+
+  name_prefix = local.name_prefix
+
+  account_id  = local.account_id
+  external_id = var.grafana_cloud_external_id
 
   tags = local.common_tags
 }
@@ -495,6 +560,17 @@ module "cloudflare" {
   certificate_arn_dvo                 = aws_acm_certificate.api_cert.domain_validation_options
 }
 
+module "redis" {
+  source = "../../modules/redis"
+
+  name_prefix = local.name_prefix
+
+  plan_id           = data.rediscloud_essentials_plan.free.id
+  payment_method_id = data.rediscloud_payment_method.visa.id
+
+  tags = local.common_tags
+}
+
 module "mongodb" {
   source = "../../modules/mongodb"
 
@@ -502,6 +578,7 @@ module "mongodb" {
 
   org_id   = var.mongodbatlas_org_id
   password = var.mongodbatlas_db_password
+  db_name  = var.mongodb_db_name
 }
 
 module "confluent_kafka" {
@@ -612,7 +689,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           period = 300
           stat   = "Average"
-          region = data.aws_region.current.name
+          region = local.region
           title  = "Overview of Springsnap production metrics and resources"
         }
       }

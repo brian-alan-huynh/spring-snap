@@ -63,7 +63,7 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   aliases             = var.aliases
-  price_class         = var.price_class
+  price_class         = "PriceClass_100"
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   web_acl_id          = var.web_acl_id

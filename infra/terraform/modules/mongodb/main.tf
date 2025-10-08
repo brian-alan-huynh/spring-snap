@@ -30,7 +30,7 @@ resource "mongodbatlas_database_user" "main" {
 
   roles {
     role_name     = "readWriteAnyDatabase"
-    database_name = "snap_tags_and_captions"
+    database_name = var.db_name
   }
 }
 
@@ -45,11 +45,6 @@ resource "aws_secretsmanager_secret" "main" {
 }
 
 resource "aws_secretsmanager_secret_version" "main" {
-  secret_id = aws_secretsmanager_secret.main.id
-
-  secret_string = jsonencode({
-    username          = mongodbatlas_database_user.main.username
-    password          = var.password
-    connection_string = local.connection_string
-  })
+  secret_id     = aws_secretsmanager_secret.main.id
+  secret_string = local.connection_string
 }

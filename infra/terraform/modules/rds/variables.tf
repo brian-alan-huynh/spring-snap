@@ -16,6 +16,12 @@ variable "vpc_id" {
 variable "allowed_security_group_ids" {
   description = "List of security group IDs for the RDS instance"
   type        = list(string)
+  default     = []
+}
+
+variable "local_cidr_block" {
+  description = "Local machine IP address with subnet mask"
+  type        = string
 }
 
 variable "environment" {
@@ -23,7 +29,7 @@ variable "environment" {
   type        = string
 }
 
-variable "instance_class" {
+variable "db_instance_class" {
   description = "Instance class for the RDS instance"
   type        = string
 }

@@ -8,7 +8,7 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "access_logs_bucket" {
+variable "s3_logging_bucket_name" {
   description = "The name of the S3 bucket where the access logs will be stored"
   type        = string
 }

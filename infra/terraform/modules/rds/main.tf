@@ -17,7 +17,20 @@ resource "aws_security_group" "main" {
     security_groups = var.allowed_security_group_ids
   }
 
-  egress = []
+  ingress {
+    description = "PostgreSQL from local/personal machine"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [var.local_cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -103,7 +116,7 @@ resource "aws_db_instance" "main" {
   identifier     = "${var.name_prefix}-rds"
   engine         = "postgres"
   engine_version = "17.5"
-  instance_class = var.instance_class
+  instance_class = var.db_instance_class
 
   allocated_storage     = 20
   max_allocated_storage = 100
@@ -116,7 +129,7 @@ resource "aws_db_instance" "main" {
 
   db_name  = var.db_name
   username = var.db_username
-  password = jsondecode(aws_secretsmanager_secret_version.master_password.secret_string)["password"]
+  password = jsondecode(aws_secretsmanager_secret_version.main.secret_string)["password"]
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.main.id]
@@ -227,16 +240,19 @@ resource "random_password" "master_password" {
   min_numeric      = 1
 }
 
-resource "aws_secretsmanager_secret" "master_password" {
+resource "aws_secretsmanager_secret" "main" {
   name = "${var.name_prefix}-rds-secret"
 }
 
-resource "aws_secretsmanager_secret_version" "master_password" {
-  secret_id = aws_secretsmanager_secret.master_password.id
+resource "aws_secretsmanager_secret_version" "main" {
+  secret_id = aws_secretsmanager_secret.main.id
 
   secret_string = jsonencode({
     username = var.db_username
     password = random_password.master_password.result
+    db_name  = aws_db_instance.main.db_name
+    db_host  = aws_db_instance.main.address
+    db_port  = aws_db_instance.main.port
   })
 }
 
@@ -270,7 +286,7 @@ resource "null_resource" "grant_rds_iam_role_app_user" {
     EOT
 
     environment = {
-      PGPASSWORD = jsondecode(aws_secretsmanager_secret_version.master_password.secret_string)["password"]
+      PGPASSWORD = jsondecode(aws_secretsmanager_secret_version.main.secret_string)["password"]
     }
   }
 

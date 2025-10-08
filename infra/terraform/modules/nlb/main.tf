@@ -8,7 +8,7 @@ resource "aws_lb" "main" {
   enable_deletion_protection = true
 
   access_logs {
-    bucket  = var.access_logs_bucket
+    bucket  = var.s3_logging_bucket_name
     prefix  = "nlb-access-logs"
     enabled = true
   }

@@ -17,8 +17,3 @@ output "ec2_instance_profile_name" {
   description = "EC2 instance profile name for ECS cluster instances"
   value       = aws_iam_instance_profile.ec2.name
 }
-
-output "grafana_iam_role_arn" {
-  description = "ARN of the Grafana IAM role"
-  value       = aws_iam_role.grafana.arn
-}

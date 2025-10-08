@@ -28,6 +28,18 @@ variable "rds_resource_id" {
   type        = string
 }
 
+variable "rds_secret_arn" {
+  description = "RDS secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "redis_secret_arn" {
+  description = "Redis secret ARN"
+  type        = string
+  sensitive   = true
+}
+
 variable "kafka_secret_arn" {
   description = "Kafka secret ARN"
   type        = string
@@ -36,6 +48,84 @@ variable "kafka_secret_arn" {
 
 variable "mongodb_secret_arn" {
   description = "MongoDB secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_id_secret_arn" {
+  description = "Google client ID secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret_secret_arn" {
+  description = "Google client secret secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "facebook_client_id_secret_arn" {
+  description = "Facebook client ID secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "facebook_client_secret_secret_arn" {
+  description = "Facebook client secret secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "apple_client_id_secret_arn" {
+  description = "Apple client ID secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "apple_client_secret_secret_arn" {
+  description = "Apple client secret secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "owner_email_secret_arn" {
+  description = "Owner email secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "roboflow_api_key_secret_arn" {
+  description = "Roboflow API key secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "smtp_email_app_pass_secret_arn" {
+  description = "SMTP email app pass secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "grafana_loki_url_secret_arn" {
+  description = "Grafana Loki URL secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "grafana_loki_username_secret_arn" {
+  description = "Grafana Loki username secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "grafana_loki_password_secret_arn" {
+  description = "Grafana Loki password secret ARN"
+  type        = string
+  sensitive   = true
+}
+
+variable "app_csrf_secret_key_secret_arn" {
+  description = "App CSRF secret key secret ARN"
   type        = string
   sensitive   = true
 }

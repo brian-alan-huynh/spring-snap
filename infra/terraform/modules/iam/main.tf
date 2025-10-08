@@ -42,8 +42,8 @@ resource "aws_iam_role" "ecs_task" {
   tags = var.tags
 }
 
-resource "aws_iam_policy" "app" {
-  name        = "${var.name_prefix}-app"
+resource "aws_iam_policy" "ecs_task" {
+  name        = "${var.name_prefix}-ecs-task-policy"
   description = "Policy for application code access to S3, RDS, and Secrets Manager with ECS as the trusted entity"
 
   policy = jsonencode({
@@ -74,17 +74,32 @@ resource "aws_iam_policy" "app" {
         Effect = "Allow",
         Action = "secretsmanager:GetSecretValue",
         Resource = [
+          var.rds_secret_arn,
+          var.redis_secret_arn,
           var.kafka_secret_arn,
-          var.mongodb_secret_arn
+          var.mongodb_secret_arn,
+          var.google_client_id_secret_arn,
+          var.google_client_secret_secret_arn,
+          var.facebook_client_id_secret_arn,
+          var.facebook_client_secret_secret_arn,
+          var.apple_client_id_secret_arn,
+          var.apple_client_secret_secret_arn,
+          var.owner_email_secret_arn,
+          var.roboflow_api_key_secret_arn,
+          var.smtp_email_app_pass_secret_arn,
+          var.grafana_loki_url_secret_arn,
+          var.grafana_loki_username_secret_arn,
+          var.grafana_loki_password_secret_arn,
+          var.app_csrf_secret_key_secret_arn
         ]
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "app" {
+resource "aws_iam_role_policy_attachment" "ecs_task" {
   role       = aws_iam_role.ecs_task.name
-  policy_arn = aws_iam_policy.app.arn
+  policy_arn = aws_iam_policy.ecs_task.arn
 }
 
 resource "aws_iam_role" "ec2" {
@@ -114,95 +129,4 @@ resource "aws_iam_role_policy_attachment" "ec2" {
 resource "aws_iam_instance_profile" "ec2" {
   name = "${var.name_prefix}-ec2-instance-profile"
   role = aws_iam_role.ec2.name
-}
-
-# Grafana integration w/ AWS CloudWatch
-resource "aws_iam_role" "grafana" {
-  name = "${var.name_prefix}-grafana"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${var.account_id}:root"
-        }
-      }
-    ]
-  })
-
-  tags = var.tags
-}
-
-resource "aws_iam_policy" "grafana" {
-  name        = "${var.name_prefix}-grafana"
-  description = "Read-only policy for Grafana access to AWS resources"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "AllowReadingMetricsFromCloudWatch",
-        Effect = "Allow",
-        Action = [
-          "cloudwatch:DescribeAlarmsForMetric",
-          "cloudwatch:DescribeAlarmHistory",
-          "cloudwatch:DescribeAlarms",
-          "cloudwatch:ListMetrics",
-          "cloudwatch:GetMetricData",
-          "cloudwatch:GetMetricStatistics",
-          "cloudwatch:GetDashboard",
-          "cloudwatch:ListDashboards"
-        ],
-        Resource = "*"
-      },
-      {
-        Sid    = "AllowReadingLogsFromCloudWatch",
-        Effect = "Allow",
-        Action = [
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams",
-          "logs:GetLogGroupFields",
-          "logs:StartQuery",
-          "logs:StopQuery",
-          "logs:GetQueryResults",
-          "logs:GetLogEvents",
-          "logs:FilterLogEvents"
-        ],
-        Resource = "arn:aws:logs:*:*:*"
-      },
-      {
-        Sid    = "AllowReadingTracesFromXRayForFlameGraphs",
-        Effect = "Allow",
-        Action = [
-          "xray:GetTraceSummaries",
-          "xray:BatchGetTraces",
-          "xray:GetServiceGraphs",
-          "xray:GetTraceGraph",
-        ],
-        Resource = "*"
-      },
-      {
-        Sid    = "AllowResourceDiscovery",
-        Effect = "Allow",
-        Action = [
-          "ec2:DescribeTags",
-          "ec2:DescribeInstances",
-          "ec2:DescribeRegions",
-          "tag:GetResources",
-          "ecs:ListClusters",
-          "ecs:ListServices",
-          "ecs:DescribeServices"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "grafana" {
-  role       = aws_iam_role.grafana.name
-  policy_arn = aws_iam_policy.grafana.arn
 }

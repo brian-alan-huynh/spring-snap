@@ -33,21 +33,6 @@ variable "vpc_cidr" {
   type        = string
 }
 
-variable "min_size" {
-  description = "Minimum number of instances"
-  type        = number
-}
-
-variable "max_size" {
-  description = "Maximum number of instances"
-  type        = number
-}
-
-variable "desired_capacity" {
-  description = "Desired number of instances"
-  type        = number
-}
-
 variable "target_group_arns" {
   description = "List of target group ARNs for load balancer"
   type        = list(string)

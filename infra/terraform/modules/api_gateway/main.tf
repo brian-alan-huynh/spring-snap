@@ -47,8 +47,8 @@ resource "aws_apigatewayv2_stage" "prod" {
   }
 
   default_route_settings {
-    throttling_burst_limit = var.throttle_burst_limit
-    throttling_rate_limit  = var.throttle_rate_limit
+    throttling_burst_limit = 500
+    throttling_rate_limit  = 250
   }
 
   depends_on = [aws_cloudwatch_log_group.api_gw]
@@ -214,7 +214,7 @@ resource "aws_wafv2_web_acl" "api_protection" {
 
     statement {
       rate_based_statement {
-        limit              = var.waf_rate_limit
+        limit              = 2000
         aggregate_key_type = "IP"
       }
     }

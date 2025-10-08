@@ -72,16 +72,6 @@ variable "cors_methods" {
   }
 }
 
-variable "throttle_burst_limit" {
-  description = "API Gateway throttle burst limit"
-  type        = number
-}
-
-variable "throttle_rate_limit" {
-  description = "API Gateway throttle rate limit"
-  type        = number
-}
-
 variable "enable_waf" {
   description = "Enable WAF protection"
   type        = bool
@@ -90,9 +80,4 @@ variable "enable_waf" {
 variable "web_acl_arn" {
   description = "ARN of the WAF web ACL"
   type        = string
-}
-
-variable "waf_rate_limit" {
-  description = "WAF rate limit per IP per 5 minutes"
-  type        = number
 }

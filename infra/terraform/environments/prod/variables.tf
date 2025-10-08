@@ -14,75 +14,35 @@ variable "environment" {
 variable "owner_email" {
   description = "Email address of the infra owner (used for tagging and notifications)"
   type        = string
-
-  validation {
-    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.owner_email))
-    error_message = "Owner email must be a valid email address"
-  }
 }
 
 variable "frontend_domain_name" {
   description = "Frontend domain name"
   type        = string
   default     = "https://springsnap.org"
-
-  validation {
-    condition     = can(regex("^https?://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.frontend_domain_name))
-    error_message = "Frontend domain must be a valid URL"
-  }
 }
 
 variable "api_domain_name" {
   description = "API domain name"
   type        = string
   default     = "api.springsnap.org"
-
-  validation {
-    condition     = can(regex("^https?://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.api_domain_name))
-    error_message = "API domain must be a valid URL"
-  }
 }
 
 # VPC
-variable "availability_zones" {
-  description = "List of availability zones"
-  type        = list(string)
-  default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
 
-  validation {
-    condition     = length(var.availability_zones) == 3
-    error_message = "Availability zones must be a list of 3 zones"
-  }
-}
-
-variable "vpc_cidr" {
+variable "vpc_cidr_block" {
   description = "CIDR block for VPC"
   type        = string
-
-  validation {
-    condition     = can(cidrhost(var.vpc_cidr, 0))
-    error_message = "VPC CIDR must be a valid CIDR block"
-  }
 }
 
 variable "public_subnet_cidrs" {
   description = "CIDR blocks for public subnets"
   type        = list(string)
-
-  validation {
-    condition     = length(var.public_subnet_cidrs) == 3
-    error_message = "Public subnet CIDRs must be a list of 3 CIDR blocks"
-  }
 }
 
 variable "private_subnet_cidrs" {
   description = "CIDR blocks for private subnets"
   type        = list(string)
-
-  validation {
-    condition     = length(var.private_subnet_cidrs) == 3
-    error_message = "Private subnet CIDRs must be a list of 3 CIDR blocks"
-  }
 }
 
 # EC2
@@ -96,87 +56,34 @@ variable "ec2_key_name" {
   type        = string
 }
 
-variable "asg_min_size" {
-  description = "Minimum instances in ASG"
-  type        = number
-  default     = 2
-}
-
-variable "asg_max_size" {
-  description = "Maximum instances in ASG"
-  type        = number
-  default     = 8
-}
-
-variable "asg_desired_capacity" {
-  description = "Desired instances in ASG"
-  type        = number
-  default     = 2
-}
-
-variable "docker_image" {
-  description = "Docker image name"
-  type        = string
-}
-
-variable "docker_registry_username" {
-  description = "Docker Hub username"
-  type        = string
-  sensitive   = true
-}
-
-variable "docker_registry_password" {
-  description = "Docker Hub password"
-  type        = string
-  sensitive   = true
-}
-
 # RDS
-variable "db_instance_class" {
+variable "rds_db_instance_class" {
   description = "RDS instance class"
   type        = string
 }
 
-variable "db_name" {
+variable "rds_db_name" {
   description = "Database name"
   type        = string
 }
 
-variable "db_username" {
+variable "rds_db_username" {
   description = "Database username"
   type        = string
+  sensitive   = true
 }
 
-variable "db_app_username" {
+variable "rds_db_app_username" {
   description = "Database application username"
   type        = string
+  sensitive   = true
 }
 
-# API Gateway
-variable "api_throttle_burst_limit" {
-  description = "API Gateway burst limit"
-  type        = number
-  default     = 500
-}
-
-variable "api_throttle_rate_limit" {
-  description = "API Gateway rate limit"
-  type        = number
-  default     = 250
-}
-
-# WAF
-variable "waf_rate_limit" {
-  description = "Rate limit for WAF per IP per 5 minutes"
-  type        = number
-  default     = 2000
-}
-
-# Cloudfront
-variable "cloudfront_price_class" {
-  description = "CloudFront price class"
+# Grafana
+variable "grafana_cloud_external_id" {
+  description = "Grafana Cloud external ID taken from Grafana Cloud UI dashboard"
   type        = string
-  default     = "PriceClass_200"
+  sensitive   = true
 }
 
 # Cloudflare
@@ -202,12 +109,18 @@ variable "mongodbatlas_private_key" {
 variable "mongodbatlas_org_id" {
   description = "MongoDB Atlas organization ID"
   type        = string
+  sensitive   = true
 }
 
 variable "mongodbatlas_db_password" {
   description = "MongoDB Atlas database password"
   type        = string
   sensitive   = true
+}
+
+variable "mongodb_db_name" {
+  description = "MongoDB Atlas database name"
+  type        = string
 }
 
 # Confluent Kafka
@@ -219,6 +132,97 @@ variable "confluent_cloud_api_key" {
 
 variable "confluent_cloud_api_secret" {
   description = "API secret for Confluent Kafka Cloud"
+  type        = string
+  sensitive   = true
+}
+
+# Backend app .env variables (values passed via run_export_env_vars_to_tf.sh)
+variable "google_client_id" {
+  description = "Google client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret" {
+  description = "Google client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "facebook_client_id" {
+  description = "Facebook client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "facebook_client_secret" {
+  description = "Facebook client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "apple_client_id" {
+  description = "Apple client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "apple_client_secret" {
+  description = "Apple client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "mongodb_db_collection_name" {
+  description = "MongoDB Atlas database collection name"
+  type        = string
+}
+
+variable "roboflow_model_path" {
+  description = "Roboflow model path"
+  type        = string
+}
+
+variable "roboflow_api_key" {
+  description = "Roboflow API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "smtp_server" {
+  description = "SMTP server"
+  type        = string
+}
+
+variable "smtp_server_port" {
+  description = "SMTP server port"
+  type        = number
+}
+
+variable "smtp_email_app_pass" {
+  description = "SMTP email app pass"
+  type        = string
+  sensitive   = true
+}
+
+variable "grafana_loki_url" {
+  description = "Grafana Loki URL"
+  type        = string
+}
+
+variable "grafana_loki_username" {
+  description = "Grafana Loki username"
+  type        = string
+}
+
+variable "grafana_loki_password" {
+  description = "Grafana Loki password"
+  type        = string
+  sensitive   = true
+}
+
+variable "app_csrf_secret_key" {
+  description = "App CSRF secret key"
   type        = string
   sensitive   = true
 }

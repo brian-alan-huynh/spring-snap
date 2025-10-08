@@ -1,14 +1,3 @@
-data "aws_secretsmanager_secret_version" "springsnap" {
-  secret_id = aws_secretsmanager_secret.springsnap.id
-}
-
-locals {
-  kafka_creds = jsondecode(data.aws_secretsmanager_secret_version.springsnap.secret_string)
-
-  api_key    = local.kafka_creds["key"]
-  api_secret = local.kafka_creds["secret"]
-}
-
 resource "confluent_environment" "main" {
   display_name = "${var.name_prefix}-environment"
 

@@ -3,15 +3,26 @@ variable "name_prefix" {
   type        = string
 }
 
-# Uncomment for prod
-# variable "cloudfront_distribution_arn" {
-#     description = "CloudFront distribution ARN"
-#     type = string
-# }
+variable "environment" {
+  description = "Development or production environment?"
+  type        = string
+}
+
+variable "account_id" {
+  description = "Account ID"
+  type        = string
+}
+
+variable "cloudfront_distribution_arn" {
+  description = "CloudFront distribution ARN (not used in /dev)"
+  type        = string
+  default     = null
+}
 
 variable "frontend_domain_name" {
   description = "Frontend domain name"
   type        = string
+  default     = "http://localhost:3000"
 }
 
 variable "tags" {
