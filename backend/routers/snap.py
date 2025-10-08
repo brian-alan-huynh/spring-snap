@@ -48,9 +48,7 @@ def _raise_snap_operation_error(func_name: str, error: Exception) -> None:
 
 @router.get("/all", response_model=list[SnapData])
 @limiter.limit("30/minute")
-async def all(request: Request, csrf_protect: CsrfProtect = Depends()):
-    await csrf_protect.validate_csrf(request)
-    
+async def all(request: Request):
     try:
         session_key = request.cookies.get("session_key")
         

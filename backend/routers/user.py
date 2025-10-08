@@ -48,9 +48,7 @@ def _raise_user_operation_error(func_name: str, error: Exception) -> None:
 
 @router.get("/details", response_model=DetailsResponse)
 @limiter.limit("30/minute")
-async def details(request: Request, csrf_protect: CsrfProtect = Depends()):
-    await csrf_protect.validate_csrf(request)
-    
+async def details(request: Request):
     try:
         session_key = request.cookies.get("session_key")
         
