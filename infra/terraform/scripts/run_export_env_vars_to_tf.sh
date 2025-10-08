@@ -1,0 +1,3 @@
+# load the necessary .env variables to .sh shell script via "export $(grep -v '^#' ../../backend.env | xargs)" (note that we only export the .env variables terraform doesn't use, such as the google client id) --> 
+# export these loaded .env variables to the sensitive terraform dev and prod variables via "export TF_VAR_[terraform variable name]=$[.env variable name]" 
+# run terraform prod script after: terraform init --> terraform plan --> terraform apply -auto-approve
