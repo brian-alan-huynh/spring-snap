@@ -152,7 +152,7 @@ resource "aws_ecs_task_definition" "backend" {
           valueFrom = aws_secretsmanager_secret.apple_client_secret.arn
         },
         {
-          name      = "EMAIL"
+          name      = "OWNER_EMAIL"
           valueFrom = aws_secretsmanager_secret.owner_email.arn
         },
         {
