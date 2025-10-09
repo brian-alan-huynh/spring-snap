@@ -186,7 +186,7 @@ async def request_otp(
         msg = MIMEMultipart()
         
         msg["Subject"] = "Five Snaps Verification Code"
-        msg["From"] = env("EMAIL")
+        msg["From"] = env("OWNER_EMAIL")
         msg["To"] = email
         
         text = f"""\
@@ -214,8 +214,8 @@ async def request_otp(
         
         with smtplib.SMTP(env("SMTP_SERVER"), env("SMTP_SERVER_PORT")) as server:
             server.starttls()
-            server.login(env("EMAIL"), env("SMTP_EMAIL_APP_PASS"))
-            server.sendmail(env("EMAIL"), email, msg.as_string())
+            server.login(env("OWNER_EMAIL"), env("SMTP_EMAIL_APP_PASS"))
+            server.sendmail(env("OWNER_EMAIL"), email, msg.as_string())
             
         Redis.add_otp(int(otp), email)
             

@@ -13,10 +13,10 @@ load_dotenv()
 env = os.getenv
 
 REGION = env("AWS_REGION")
-redis_boto3_client = boto3.client("secretsmanager", region_name=REGION)
+secretsmanager_client = boto3.client("secretsmanager", region_name=REGION)
 
 def get_secret_string(secret_arn):
-    response = redis_boto3_client.get_secret_value(SecretId=secret_arn)
+    response = secretsmanager_client.get_secret_value(SecretId=secret_arn)
     return json.loads(response["SecretString"])
 
 # RDS

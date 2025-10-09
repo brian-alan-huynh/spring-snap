@@ -112,43 +112,19 @@ resource "aws_ecs_task_definition" "backend" {
 
       secrets = [
         {
-          name      = "AWS_RDS_DB_USERNAME"
-          valueFrom = "${var.rds_secret_arn}:username::"
+          name      = "AWS_RDS_SECRET_ARN"
+          valueFrom = var.rds_secret_arn
         },
         {
-          name      = "AWS_RDS_DB_NAME"
-          valueFrom = "${var.rds_secret_arn}:db_name::"
+          name      = "REDIS_SECRET_ARN"
+          valueFrom = var.redis_secret_arn
         },
         {
-          name      = "AWS_RDS_DB_HOST"
-          valueFrom = "${var.rds_secret_arn}:db_host::"
+          name      = "KAFKA_SECRET_ARN"
+          valueFrom = var.kafka_secret_arn
         },
         {
-          name      = "AWS_RDS_DB_PORT"
-          valueFrom = "${var.rds_secret_arn}:db_port::"
-        },
-        {
-          name      = "REDIS_HOST"
-          valueFrom = "${var.redis_secret_arn}:host::"
-        },
-        {
-          name      = "REDIS_PORT"
-          valueFrom = "${var.redis_secret_arn}:port::"
-        },
-        {
-          name      = "REDIS_PASS"
-          valueFrom = "${var.redis_secret_arn}:password::"
-        },
-        {
-          name      = "KAFKA_API_KEY"
-          valueFrom = "${var.kafka_secret_arn}:key::"
-        },
-        {
-          name      = "KAFKA_API_SECRET"
-          valueFrom = "${var.kafka_secret_arn}:secret::"
-        },
-        {
-          name      = "MONGODB_DB_CONNECTION_STRING"
+          name      = "MONGODB_SECRET_ARN"
           valueFrom = var.mongodb_secret_arn
         },
         {
