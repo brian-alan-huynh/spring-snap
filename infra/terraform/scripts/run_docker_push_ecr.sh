@@ -5,6 +5,22 @@ set -euo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
 trap 'echo "Script finished (exit code $?)"' EXIT
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
+CURRENT_DIR="$SCRIPT_DIR"
+MARKER="README.md"
+
+while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
+    CURRENT_DIR="$(dirname "$CURRENT_DIR")"
+done
+
+if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
+    echo "Error: Unable to find project root dir"
+    exit 1
+fi
+
+PROJECT_ROOT_DIR="${CURRENT_DIR}"
+
 AWS_REGION="us-east-2"
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 TAG="latest"
@@ -37,19 +53,19 @@ build_push_docker_image() {
     docker push "${repo_url}:${TAG}"
 }
 
-repo_url_outputs="$(terraform -chdir=/infra/terraform/environments/prod output -json)"
+repo_url_outputs="$(terraform -chdir="${PROJECT_ROOT_DIR}/infra/terraform/environments/prod" output -json)"
 
 backend_repo_url="$(echo "$repo_url_outputs" | jq -r '.ecr_repository_url_backend.value')"
 frontend_repo_url="$(echo "$repo_url_outputs" | jq -r '.ecr_repository_url_frontend.value')"
 
 echo "Building Docker image for backend and pushing to AWS ECR"
 
-build_push_docker_image "$backend_repo_url" "/backend/docker/Dockerfile" "/backend"
+build_push_docker_image "$backend_repo_url" "${PROJECT_ROOT_DIR}/backend/docker/Dockerfile" "${PROJECT_ROOT_DIR}/backend"
 
 echo "Backend Docker image successfully built and pushed to AWS ECR"
 
 echo "Building Docker image for frontend and pushing to AWS ECR"
 
-build_push_docker_image "$frontend_repo_url" "/frontend/docker/Dockerfile" "/frontend"
+build_push_docker_image "$frontend_repo_url" "${PROJECT_ROOT_DIR}/frontend/docker/Dockerfile" "${PROJECT_ROOT_DIR}/frontend"
 
 echo "Frontend Docker image successfully built and pushed to AWS ECR"

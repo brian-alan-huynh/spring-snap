@@ -5,8 +5,24 @@ set -euo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
 trap 'echo "Script finished (exit code $?)"' EXIT
 
-BACKEND_ENV_PATH="/backend/.env"
-TF_PROD_ENV_PATH="/infra/terraform/environments/prod"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
+CURRENT_DIR="$SCRIPT_DIR"
+MARKER="README.md"
+
+while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
+    CURRENT_DIR="$(dirname "$CURRENT_DIR")"
+done
+
+if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
+    echo "Error: Unable to find project root dir"
+    exit 1
+fi
+
+PROJECT_ROOT_DIR="${CURRENT_DIR}"
+
+BACKEND_ENV_PATH="${PROJECT_ROOT_DIR}/backend/.env"
+TF_PROD_ENV_PATH="${PROJECT_ROOT_DIR}/infra/terraform/environments/prod"
 
 declare -A env_vars=(
     [GOOGLE_CLIENT_ID]="google_client_id"

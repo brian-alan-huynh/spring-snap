@@ -1,6 +1,9 @@
 #!/bin/bash
 
-set -e -o pipefail
+set -euo pipefail
+
+trap 'echo "Error on line $LINENO"; exit 1' ERR
+trap 'echo "Script finished (exit code $?)"' EXIT
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a /var/log/ecs-init.log
