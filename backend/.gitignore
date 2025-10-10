@@ -13,8 +13,3 @@ env/
 *.env
 *.env.local
 *.env.*.local
-
-# Logs
-*.log
-logs/
-*.xml

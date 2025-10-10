@@ -6,6 +6,11 @@
 /build/
 /uploads/
 
+# Logs and reports
+*.xml
+*.log
+logs/
+
 # Python specific
 *.egg-info/
 *.coverage
