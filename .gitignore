@@ -10,7 +10,7 @@ env/
 *.tfstate.lock.info
 **/.terraform/
 .vscode/
-node_modules/
+*node_modules/
 *.iml
 *.ipr
 *.iws
