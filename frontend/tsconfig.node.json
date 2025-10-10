@@ -4,8 +4,9 @@
     "target": "ES2023",
     "lib": ["ES2023"],
     "module": "ESNext",
-    "types": ["node"],
+    "types": ["node", "jest"],
     "skipLibCheck": true,
+    "composite": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -22,5 +23,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "jest.config.ts"]
 }

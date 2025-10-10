@@ -27,7 +27,7 @@ cd "$FRONTEND_PATH"
 
 echo "Starting ESLint test for code analysis and quality"
 
-pnpm dlx eslint "src/**/*.{ts,tsx,js,jsx}" --max-warnings=0
+pnpm lint
 
 echo "ESLint analysis completed"
 
