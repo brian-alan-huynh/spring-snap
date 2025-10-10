@@ -8,6 +8,7 @@
 
 # Logs and reports
 *.xml
+reports/
 *.log
 logs/
 

@@ -45,7 +45,7 @@ echo "Pylint analysis completed"
 
 echo "Starting Pytest tests for unit and integration testing"
 
-pytest --strict-markers --cov="${BACKEND_PATH}" --cov-report=term --cov-report=xml:"${BACKEND_PATH}/codeCoverageReport.xml"
+pytest --strict-markers --cov="${BACKEND_PATH}" --cov-report=term --cov-report=xml:"${BACKEND_PATH}/reports/codeCoverageReport.xml"
 
 echo "Pytest testing completed"
 
