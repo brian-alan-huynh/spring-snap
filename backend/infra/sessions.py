@@ -2,7 +2,7 @@ import json
 import uuid
 from datetime import datetime
 
-from messaging import kafka_producer
+from .messaging import kafka_producer
 from backend.main import app
 from backend.config.config import REDIS_CLIENT
 

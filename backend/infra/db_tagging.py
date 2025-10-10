@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from messaging import kafka_producer
+from .messaging import kafka_producer
 from backend.main import app
 from backend.config.config import MONGO_COLLECTION
 
