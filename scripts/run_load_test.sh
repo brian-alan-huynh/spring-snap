@@ -25,8 +25,17 @@ K6_PATH="${PROJECT_ROOT_DIR}/k6"
 
 echo "Checking for required environment variable's existence"
 
-if [ -z "${BASE_URL}" ] || [ -z "${WEB_URL}" ]; then
-  echo "Error: BASE_URL and WEB_URL environment variables must be set"
+BASE_URL="$1"
+WEB_URL="$2"
+K6_CLOUD_TOKEN="$3"
+
+if [ -z "${BASE_URL}" ]; then
+  echo "Error: BASE_URL environment variable must be set"
+  exit 1
+fi
+
+if [ -z "${WEB_URL}" ]; then
+  echo "Error: WEB_URL environment variable must be set"
   exit 1
 fi
 
@@ -38,7 +47,6 @@ fi
 echo "All required environment variables are present"
 
 K6_TEST_FILE="${K6_PATH}/load-test.js"
-K6_TEST_SCENARIO="average_load_test"
 SUMMARY_OUTPUT_FILE="${K6_PATH}/reports/load-test-summary.json"
 
 echo "Starting K6 container"
@@ -53,7 +61,7 @@ docker run \
   -e K6_CLOUD_TOKEN="${K6_CLOUD_TOKEN}" \
   grafana/k6:latest \
   k6 cloud \
-    --scenario "${K6_TEST_SCENARIO}" \
+    --scenario average_load_test \
     --summary-export="${SUMMARY_OUTPUT_FILE}" \
     "${K6_TEST_FILE}"
 
