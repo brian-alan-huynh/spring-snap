@@ -64,7 +64,7 @@ resource "aws_launch_template" "main" {
   }
 
   monitoring {
-    enabled = var.enable_detailed_monitoring
+    enabled = true
   }
 
   ebs_optimized = true

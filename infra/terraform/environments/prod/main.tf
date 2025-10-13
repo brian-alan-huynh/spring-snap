@@ -234,8 +234,6 @@ locals {
     BackupRequired     = "yes"
     MonitoringRequired = "yes"
   }
-
-  detailed_monitoring_enabled = true
 }
 
 module "vpc" {
@@ -306,8 +304,6 @@ module "ec2" {
   target_group_arns = [module.nlb.target_group_arn]
 
   iam_instance_profile_name = module.iam.ec2_instance_profile_name
-
-  enable_detailed_monitoring = local.detailed_monitoring_enabled
 
   user_data = templatefile("../../modules/ec2/user_data.sh", {
     ecs_cluster_name = module.ecs.cluster_name

@@ -47,12 +47,6 @@ variable "user_data" {
   description = "User data script for instance initialization"
   type        = string
 }
-
-variable "enable_detailed_monitoring" {
-  description = "Enable detailed CloudWatch monitoring"
-  type        = bool
-}
-
 variable "tags" {
   description = "Tags for the EC2 instance"
   type        = map(string)
