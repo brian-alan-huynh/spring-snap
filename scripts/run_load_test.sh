@@ -21,6 +21,8 @@ fi
 
 PROJECT_ROOT_DIR="${CURRENT_DIR}"
 
+K6_PATH="${PROJECT_ROOT_DIR}/k6"
+
 echo "Checking for required environment variable's existence"
 
 if [ -z "${BASE_URL}" ] || [ -z "${WEB_URL}" ]; then
@@ -35,9 +37,9 @@ fi
 
 echo "All required environment variables are present"
 
-K6_TEST_FILE="${PROJECT_ROOT_DIR}/k6/load-test.js"
+K6_TEST_FILE="${K6_PATH}/load-test.js"
 K6_TEST_SCENARIO="average_load_test"
-SUMMARY_OUTPUT_FILE="${PROJECT_ROOT_DIR}/k6/load-test-summary.json"
+SUMMARY_OUTPUT_FILE="${K6_PATH}/reports/load-test-summary.json"
 
 echo "Starting K6 container"
 
