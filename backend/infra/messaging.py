@@ -60,7 +60,7 @@ kafka_producer = Producer({
 
 kafka_consumer = Consumer({
     "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
-    "group.id": "springsnap-kafka-group",
+    "group.id": "curby-kafka-group",
     "auto.offset.reset": "earliest",
     "enable.auto.commit": False,
     "security.protocol": "SASL_SSL",
@@ -70,9 +70,9 @@ kafka_consumer = Consumer({
 })
 
 kafka_consumer.subscribe([
-    "springsnap.s3",
-    "springsnap.redis",
-    "springsnap.mongodb",
+    "curby.s3",
+    "curby.redis",
+    "curby.mongodb",
 ])
 
 BATCH_SIZE = 150
