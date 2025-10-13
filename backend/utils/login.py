@@ -12,7 +12,7 @@ def update_thumbnail(user_id: int, session_key: str) -> None:
     if most_recent_snap == "":
         return
     
-    Redis.place_thumbnail_img_url(session_key, most_recent_snap)
+    Redis.place_thumbnail_file_url(session_key, most_recent_snap)
     return
 
 def signup_or_login_oauth(first_name: str, provider: str, oauth_user_id: int) -> str:

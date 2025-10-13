@@ -13,22 +13,22 @@ class YOLOv11Error(Exception):
 
 def yolov11_error_handler(error: Exception = None) -> None:
     if error:
-        error_message = f"Failed to perform YOLOv11 detection in yolov11_detect_img_objects: {error}"
+        error_message = f"Failed to perform YOLOv11 detection in yolov11_detect_file_objects: {error}"
         app.state.logger.log_error(error_message)
         raise YOLOv11Error(error_message) from error
 
     else:
-        error_message = "Failed to perform YOLOv11 detection in yolov11_detect_img_objects"
+        error_message = "Failed to perform YOLOv11 detection in yolov11_detect_file_objects"
         app.state.logger.log_error(error_message)
         raise YOLOv11Error(error_message)
 
 load_dotenv()
 env = os.getenv
 
-async def yolov11_detect_img_objects(img_file: UploadFile) -> list[str]:
+async def yolov11_detect_file_objects(file: UploadFile) -> list[str]:
     try:
-        img_content = await img_file.read()
-        img_base64 = str(base64.b64encode(img_content).decode("utf-8"))
+        file_content = await file.read()
+        file_base64 = str(base64.b64encode(file_content).decode("utf-8"))
         
         res = req.post(
             f"https://detect.roboflow.com/{env("ROBOFLOW_MODEL_PATH")}",
@@ -43,7 +43,7 @@ async def yolov11_detect_img_objects(img_file: UploadFile) -> list[str]:
                 "confidence": 0.35,
                 "api-key": env("ROBOFLOW_API_KEY"),
             },
-            data=img_base64,
+            data=file_base64,
         )
         
         if res.status_code != 200:

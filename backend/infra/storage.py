@@ -64,9 +64,9 @@ class S3:
         return f"{user_id}/snap/{timestamp}_{unique_id}{file_extension}"
 
     @classmethod
-    async def upload_snap(cls, user_id: int, img_file: UploadFile, folder_name: str | None) -> tuple[str, str]:
+    async def upload_snap(cls, user_id: int, file: UploadFile, folder_name: str | None) -> tuple[str, str]:
         try:
-            file_extension = os.path.splitext(img_file.filename)[1].lower()
+            file_extension = os.path.splitext(file.filename)[1].lower()
             
             if file_extension not in [".jpg", ".jpeg", ".png", ".gif"]:
                 error_message = f"Invalid file extension: {file_extension}"
@@ -74,15 +74,15 @@ class S3:
                 app.state.logger.log_error(error_message)
                 raise S3FileExtensionError(error_message)
                 
-            s3_key = cls._generate_s3_key(user_id, img_file.filename, folder_name)
-            img_content = BytesIO(await img_file.read())
+            s3_key = cls._generate_s3_key(user_id, file.filename, folder_name)
+            file_content = BytesIO(await file.read())
             
             S3_CLIENT.upload_fileobj(
                 Bucket=BUCKET_NAME,
                 Key=s3_key,
-                Fileobj=img_content,
+                Fileobj=file_content,
                 ExtraArgs={
-                    "ContentType": img_file.content_type,
+                    "ContentType": file.content_type,
                     "ACL": "public-read",
                 },
             )

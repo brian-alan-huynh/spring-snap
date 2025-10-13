@@ -119,22 +119,22 @@ def process_batch(messages: list):
                 case "redis.add_new_session":
                     session_key = record_msg["session_key"]
                     user_id = record_msg["user_id"]
-                    thumbnail_img_url = record_msg["thumbnail_img_url"]
+                    thumbnail_file_url = record_msg["thumbnail_file_url"]
                     created_at = record_msg["created_at"]
                     
                     REDIS_CLIENT.hset(session_key, mapping={
                         "user_id": user_id,
-                        "thumbnail_img_url": thumbnail_img_url,
+                        "thumbnail_file_url": thumbnail_file_url,
                         "created_at": created_at,
                     })
                     
                     REDIS_CLIENT.expire(session_key, 60 * 60 * 24 * 7 * 4 * 6)
                     
-                case "redis.place_thumbnail_img_url":
+                case "redis.place_thumbnail_file_url":
                     session_key = record_msg["session_key"]
-                    thumbnail_img_url = record_msg["thumbnail_img_url"]
+                    thumbnail_file_url = record_msg["thumbnail_file_url"]
                     
-                    REDIS_CLIENT.hset(session_key, "thumbnail_img_url", thumbnail_img_url)
+                    REDIS_CLIENT.hset(session_key, "thumbnail_file_url", thumbnail_file_url)
                     
                 case "redis.delete_session":
                     session_key = record_msg["session_key"]
@@ -146,7 +146,7 @@ def process_batch(messages: list):
                     
                     REDIS_CLIENT.setex(key=email, time=900, value=otp)
                     
-                case "mongodb.add_img_tags":
+                case "mongodb.add_file_tags":
                     user_id = record_msg["user_id"]
                     s3_key = record_msg["s3_key"]
                     tags = record_msg["tags"]
@@ -161,7 +161,7 @@ def process_batch(messages: list):
                         "created_at": created_at,
                     })
                     
-                case "mongodb.write_img_caption":
+                case "mongodb.write_file_caption":
                     s3_key = record_msg["s3_key"]
                     caption = record_msg["caption"]
                     
@@ -170,11 +170,11 @@ def process_batch(messages: list):
                         { "$set": { "caption": caption } },
                     )
                     
-                case "mongodb.delete_img_tags_and_captions":
+                case "mongodb.delete_file_tags_and_captions":
                     s3_key = record_msg["s3_key"]
                     MONGO_COLLECTION.delete_one({ "s3_key": s3_key })
                     
-                case "mongodb.delete_all_user_img_tags_and_captions":
+                case "mongodb.delete_all_user_file_tags_and_captions":
                     user_id = record_msg["user_id"]
                     MONGO_COLLECTION.delete_many({ "user_id": user_id })
                     

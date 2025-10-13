@@ -47,7 +47,7 @@ class Redis:
                 "operation": "redis.add_new_session",
                 "session_key": session_key,
                 "user_id": user_id,
-                "thumbnail_img_url": "",
+                "thumbnail_file_url": "",
                 "created_at": datetime.now(),
             }
 
@@ -79,12 +79,12 @@ class Redis:
             cls._raise_redis_operation_failure("get_session", e)
         
     @classmethod
-    def place_thumbnail_img_url(cls, session_key: str, thumbnail_img_url: str) -> None:
+    def place_thumbnail_file_url(cls, session_key: str, thumbnail_file_url: str) -> None:
         try:
             message = {
-                "operation": "redis.place_thumbnail_img_url",
+                "operation": "redis.place_thumbnail_file_url",
                 "session_key": session_key,
-                "thumbnail_img_url": thumbnail_img_url,
+                "thumbnail_file_url": thumbnail_file_url,
             }
 
             kafka_producer.produce(
@@ -96,7 +96,7 @@ class Redis:
             remaining_messages = kafka_producer.flush(timeout=15)
 
             if remaining_messages > 0:
-                cls._raise_kafka_message_delivery_failure("place_thumbnail_img_url", remaining_messages)
+                cls._raise_kafka_message_delivery_failure("place_thumbnail_file_url", remaining_messages)
 
             return
         
@@ -104,7 +104,7 @@ class Redis:
             raise
         
         except Exception as e:
-            cls._raise_kafka_message_produce_failure("place_thumbnail_img_url", e)
+            cls._raise_kafka_message_produce_failure("place_thumbnail_file_url", e)
 
     @classmethod
     def delete_session(cls, session_key: str) -> None:

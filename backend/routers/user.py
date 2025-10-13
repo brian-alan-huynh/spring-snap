@@ -120,7 +120,7 @@ async def delete(
         Redis.delete_session(session_key)
         response.delete_cookie("session_key")
         S3.delete_all_snaps(user_id)
-        MongoDB.delete_all_user_img_tags_and_captions(user_id)
+        MongoDB.delete_all_user_file_tags_and_captions(user_id)
         
         return Response(status_code=200)
     

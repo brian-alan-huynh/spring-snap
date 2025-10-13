@@ -8,7 +8,7 @@ from backend.main import app, limiter
 from backend.infra.db_tagging import MongoDB
 from backend.infra.storage import S3
 from backend.infra.sessions import Redis
-from backend.services.computer_vision import yolov11_detect_img_objects
+from backend.services.computer_vision import yolov11_detect_file_objects
 
 router = APIRouter(
     prefix="/snap",
@@ -57,11 +57,11 @@ async def all(request: Request):
         user_id = session["user_id"]
         
         snaps = S3.read_snaps(user_id)
-        img_tags_and_captions = MongoDB.read_img_tags_and_captions(user_id)
+        snaps_tags_and_captions = MongoDB.read_file_tags_and_captions(user_id)
         
         snaps_with_tags_and_captions = []
         
-        for snap, tags_and_caption in zip(snaps, img_tags_and_captions):
+        for snap, tags_and_caption in zip(snaps, snaps_tags_and_captions):
             snaps_with_tags_and_captions.append({
                 "file_url": snap["file_url"],
                 "created_at": snap["created_at"],
@@ -81,8 +81,8 @@ async def all(request: Request):
 @limiter.limit("325/minute")
 async def upload(
     request: Request,
-    img_file: UploadFile,
-    folder_name: str | None,
+    file: UploadFile,
+    folder_name: str | None = None,
     csrf_protect: CsrfProtect = Depends(),
 ):
     await csrf_protect.validate_csrf(request)
@@ -93,10 +93,10 @@ async def upload(
         session = Redis.get_session(session_key)
         user_id = session["user_id"]
         
-        img_url, s3_key = await S3.upload_snap(user_id, img_file, folder_name)
-        Redis.place_thumbnail_img_url(session_key, img_url)
-        tags = await yolov11_detect_img_objects(img_file)
-        MongoDB.add_img_tags(user_id, s3_key, tags)
+        file_url, s3_key = await S3.upload_snap(user_id, file, folder_name)
+        Redis.place_thumbnail_file_url(session_key, file_url)
+        tags = await yolov11_detect_file_objects(file)
+        MongoDB.add_file_tags(user_id, s3_key, tags)
         
         return Response(status_code=200)
         
@@ -117,7 +117,7 @@ async def caption(
         s3_key = key_and_caption.s3_key
         caption = key_and_caption.caption
         
-        MongoDB.write_img_caption(s3_key, caption)
+        MongoDB.write_file_caption(s3_key, caption)
         
         return Response(status_code=200)
         
@@ -134,7 +134,7 @@ async def delete_single(
     
     try:
         S3.delete_snap(s3_key)
-        MongoDB.delete_img_tags_and_captions(s3_key)
+        MongoDB.delete_file_tags_and_captions(s3_key)
         
         return Response(status_code=200)
     
