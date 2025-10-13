@@ -4,11 +4,16 @@ variable "name_prefix" {
 }
 
 variable "topics" {
-  description = "List of Kafka topics defined in Curby Storage backend app (located in backend/infra/messaging.py)"
+  description = "List of Kafka topics defined in Springsnap"
   type        = map(number)
   default = {
-    "curby.s3"      = 2
-    "curby.redis"   = 8
-    "curby.mongodb" = 8
+    "springsnap.s3"      = 2
+    "springsnap.redis"   = 8
+    "springsnap.mongodb" = 8
+  }
+
+  validation {
+    condition     = can([var.topics, "springsnap.s3", "springsnap.redis", "springsnap.mongodb"])
+    error_message = "Topics must be springsnap.s3, springsnap.redis, or springsnap.mongodb"
   }
 }

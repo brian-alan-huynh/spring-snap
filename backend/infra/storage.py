@@ -144,7 +144,7 @@ class S3:
             }
 
             kafka_producer.produce(
-                topic="curby.s3",
+                topic="springsnap.s3",
                 key=str(s3_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -171,7 +171,7 @@ class S3:
             }
 
             kafka_producer.produce(
-                topic="curby.s3",
+                topic="springsnap.s3",
                 key=str(user_id).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )

@@ -25,19 +25,19 @@ resource "confluent_kafka_cluster" "main" {
   }
 }
 
-resource "confluent_service_account" "curby" {
+resource "confluent_service_account" "springsnap" {
   display_name = "${var.name_prefix}-app-service-account"
-  description  = "Service account for Curby Storage application with Confluent Kafka access"
+  description  = "Service account for SpringSnap application with Confluent Kafka access"
 }
 
-resource "confluent_api_key" "curby_app_api_key" {
+resource "confluent_api_key" "springsnap_app_api_key" {
   display_name = "${var.name_prefix}-app-api-key"
-  description  = "Confluent Kafka API key for Curby Storage application"
+  description  = "Confluent Kafka API key for SpringSnap application"
 
   owner {
-    id          = confluent_service_account.curby.id
-    api_version = confluent_service_account.curby.api_version
-    kind        = confluent_service_account.curby.kind
+    id          = confluent_service_account.springsnap.id
+    api_version = confluent_service_account.springsnap.api_version
+    kind        = confluent_service_account.springsnap.kind
   }
 
   managed_resource {
@@ -55,47 +55,47 @@ resource "confluent_api_key" "curby_app_api_key" {
   }
 }
 
-resource "confluent_kafka_acl" "curby_topic_admin" {
+resource "confluent_kafka_acl" "springsnap_topic_admin" {
   kafka_cluster {
     id = confluent_kafka_cluster.main.id
   }
 
   resource_type = "TOPIC"
-  resource_name = "curby.*"
+  resource_name = "springsnap.*"
   pattern_type  = "PREFIXED"
-  principal     = "User:${confluent_service_account.curby.id}"
+  principal     = "User:${confluent_service_account.springsnap.id}"
   host          = "*"
   operation     = "ALL"
   permission    = "ALLOW"
   rest_endpoint = confluent_kafka_cluster.main.rest_endpoint
 
   credentials {
-    key    = confluent_api_key.curby_app_api_key.id
-    secret = confluent_api_key.curby_app_api_key.secret
+    key    = confluent_api_key.springsnap_app_api_key.id
+    secret = confluent_api_key.springsnap_app_api_key.secret
   }
 }
 
-resource "confluent_kafka_acl" "curby_consumer_group" {
+resource "confluent_kafka_acl" "springsnap_consumer_group" {
   kafka_cluster {
     id = confluent_kafka_cluster.main.id
   }
 
   resource_type = "GROUP"
-  resource_name = "curby-*"
+  resource_name = "springsnap-*"
   pattern_type  = "PREFIXED"
-  principal     = "User:${confluent_service_account.curby.id}"
+  principal     = "User:${confluent_service_account.springsnap.id}"
   host          = "*"
   operation     = "ALL"
   permission    = "ALLOW"
   rest_endpoint = confluent_kafka_cluster.main.rest_endpoint
 
   credentials {
-    key    = confluent_api_key.curby_app_api_key.id
-    secret = confluent_api_key.curby_app_api_key.secret
+    key    = confluent_api_key.springsnap_app_api_key.id
+    secret = confluent_api_key.springsnap_app_api_key.secret
   }
 }
 
-resource "confluent_kafka_topic" "curby" {
+resource "confluent_kafka_topic" "springsnap" {
   for_each = var.topics
 
   kafka_cluster {
@@ -118,20 +118,20 @@ resource "confluent_kafka_topic" "curby" {
   }
 
   credentials {
-    key    = confluent_api_key.curby_app_api_key.id
-    secret = confluent_api_key.curby_app_api_key.secret
+    key    = confluent_api_key.springsnap_app_api_key.id
+    secret = confluent_api_key.springsnap_app_api_key.secret
   }
 }
 
-resource "aws_secretsmanager_secret" "curby" {
-  name = "${var.name_prefix}-curby-secret"
+resource "aws_secretsmanager_secret" "springsnap" {
+  name = "${var.name_prefix}-springsnap-secret"
 }
 
-resource "aws_secretsmanager_secret_version" "curby" {
-  secret_id = aws_secretsmanager_secret.curby.id
+resource "aws_secretsmanager_secret_version" "springsnap" {
+  secret_id = aws_secretsmanager_secret.springsnap.id
 
   secret_string = jsonencode({
-    key    = confluent_api_key.curby_app_api_key.id
-    secret = confluent_api_key.curby_app_api_key.secret
+    key    = confluent_api_key.springsnap_app_api_key.id
+    secret = confluent_api_key.springsnap_app_api_key.secret
   })
 }

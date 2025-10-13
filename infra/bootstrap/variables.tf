@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Name of the project (used for resource tagging)"
   type        = string
-  default     = "curby"
+  default     = "springsnap"
 }
 
 variable "owner_email" {
@@ -12,5 +12,5 @@ variable "owner_email" {
 variable "state_bucket_names" {
   description = "Names for the S3 bucket that will hold Terraform state and lock files for dev and prod"
   type        = list(string)
-  default     = ["curby-state-dev", "curby-state-prod"]
+  default     = ["springsnap-state-dev", "springsnap-state-prod"]
 }

@@ -43,7 +43,7 @@ class MongoDB:
             }
             
             kafka_producer.produce(
-                topic="curby.mongodb",
+                topic="springsnap.mongodb",
                 key=str(user_id).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -71,7 +71,7 @@ class MongoDB:
             }
             
             kafka_producer.produce(
-                topic="curby.mongodb",
+                topic="springsnap.mongodb",
                 key=str(s3_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -109,7 +109,7 @@ class MongoDB:
             }
             
             kafka_producer.produce(
-                topic="curby.mongodb",
+                topic="springsnap.mongodb",
                 key=str(s3_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -136,7 +136,7 @@ class MongoDB:
             }
             
             kafka_producer.produce(
-                topic="curby.mongodb",
+                topic="springsnap.mongodb",
                 key=str(user_id).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
