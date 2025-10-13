@@ -52,7 +52,7 @@ class Redis:
             }
 
             kafka_producer.produce(
-                topic="springsnap.redis",
+                topic="curby.redis",
                 key=str(session_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -88,7 +88,7 @@ class Redis:
             }
 
             kafka_producer.produce(
-                topic="springsnap.redis",
+                topic="curby.redis",
                 key=str(session_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -115,7 +115,7 @@ class Redis:
             }
 
             kafka_producer.produce(
-                topic="springsnap.redis",
+                topic="curby.redis",
                 key=str(session_key).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )
@@ -143,7 +143,7 @@ class Redis:
             }
 
             kafka_producer.produce(
-                topic="springsnap.redis",
+                topic="curby.redis",
                 key=str(email).encode("utf-8"),
                 value=json.dumps(message).encode("utf-8"),
             )

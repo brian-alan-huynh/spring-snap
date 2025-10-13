@@ -2,7 +2,7 @@
 variable "project_name" {
   description = "Name of project (used as prefix for all resources)"
   type        = string
-  default     = "springsnap"
+  default     = "curby"
 }
 
 variable "environment" {
@@ -19,13 +19,13 @@ variable "owner_email" {
 variable "frontend_domain_name" {
   description = "Frontend domain name"
   type        = string
-  default     = "https://springsnap.org"
+  default     = "https://curbystorage.com"
 }
 
 variable "api_domain_name" {
   description = "API domain name"
   type        = string
-  default     = "api.springsnap.org"
+  default     = "api.curbystorage.com"
 }
 
 # VPC

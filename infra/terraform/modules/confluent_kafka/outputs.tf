@@ -1,6 +1,6 @@
 output "secret_arn" {
   description = "Confluent Kafka API secret ARN"
-  value       = aws_secretsmanager_secret.springsnap.arn
+  value       = aws_secretsmanager_secret.main.arn
   sensitive   = true
 }
 

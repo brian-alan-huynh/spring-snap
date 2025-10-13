@@ -2,7 +2,7 @@
 variable "project_name" {
   description = "Name of project (used as prefix for all resources)"
   type        = string
-  default     = "springsnap"
+  default     = "curby"
 }
 
 variable "environment" {

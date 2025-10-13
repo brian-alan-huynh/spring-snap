@@ -29,7 +29,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "springsnap-state-prod"
+    bucket       = "curby-state-prod"
     key          = "prod/terraform.tfstate"
     region       = "us-east-2"
     encrypt      = true
@@ -199,8 +199,8 @@ data "aws_iam_policy_document" "kms" {
   }
 }
 
-data "cloudflare_zone" "springsnap_org" {
-  name = "springsnap.org"
+data "cloudflare_zone" "curby_org" {
+  name = "curbystorage.com"
 }
 
 data "rediscloud_payment_method" "visa" {
@@ -551,7 +551,7 @@ module "cloudflare" {
 
   name_prefix = local.name_prefix
 
-  zone_id                             = data.cloudflare_zone.springsnap_org.id
+  zone_id                             = data.cloudflare_zone.curby_org.id
   cloudfront_distribution_domain_name = module.cloudfront.distribution_domain_name
   certificate_arn_dvo                 = aws_acm_certificate.api_cert.domain_validation_options
 }
@@ -686,7 +686,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           period = 300
           stat   = "Average"
           region = local.region
-          title  = "Overview of Springsnap production metrics and resources"
+          title  = "Overview of Curby Storage production metrics and resources"
         }
       }
     ]

@@ -57,7 +57,7 @@ RDS_ENGINE = create_engine(
     pool_recycle=3600,
     connect_args={
         "connect_timeout": 10,
-        "application_name": "Springsnap Backend",
+        "application_name": "Curby Storage Backend",
     },
 )
 

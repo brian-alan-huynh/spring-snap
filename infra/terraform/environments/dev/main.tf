@@ -25,7 +25,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "springsnap-state-dev"
+    bucket       = "curby-state-dev"
     key          = "dev/terraform.tfstate"
     region       = "us-east-2"
     encrypt      = true
