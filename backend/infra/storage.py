@@ -51,15 +51,20 @@ class S3:
         raise KafkaProduceOperationError(error_message) from error
     
     @staticmethod
-    def _generate_s3_key(user_id: int, filename: str) -> str:
+    def _generate_s3_key(user_id: int, filename: str, folder_name: str | None) -> str:
         file_extension = os.path.splitext(filename)[1].lower()
         unique_id = str(uuid.uuid4())
         timestamp = int(datetime.now().timestamp())
 
+        # /snap/ = file stored in the root
+        # /{folder_name}/ = file stored in a folder
+        if folder_name:
+            return f"{user_id}/{folder_name}/{timestamp}_{unique_id}{file_extension}"
+        
         return f"{user_id}/snap/{timestamp}_{unique_id}{file_extension}"
 
     @classmethod
-    async def upload_snap(cls, user_id: int, img_file: UploadFile) -> tuple[str, str]:
+    async def upload_snap(cls, user_id: int, img_file: UploadFile, folder_name: str | None) -> tuple[str, str]:
         try:
             file_extension = os.path.splitext(img_file.filename)[1].lower()
             
@@ -69,7 +74,7 @@ class S3:
                 app.state.logger.log_error(error_message)
                 raise S3FileExtensionError(error_message)
                 
-            s3_key = cls._generate_s3_key(user_id, img_file.filename)
+            s3_key = cls._generate_s3_key(user_id, img_file.filename, folder_name)
             img_content = BytesIO(await img_file.read())
             
             S3_CLIENT.upload_fileobj(
@@ -93,17 +98,18 @@ class S3:
     @classmethod
     def read_snaps(cls, user_id: int) -> list[dict[str, str | datetime]]:
         try:
-            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/snap/")
+            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             
             if response["KeyCount"] == 0:
                 return []
             
             snaps = [
                 {
-                    "img_url": f"https://{BUCKET_NAME}.s3.{env("AWS_S3_REGION")}.amazonaws.com/{obj["Key"]}",
+                    "file_url": f"https://{BUCKET_NAME}.s3.{env("AWS_S3_REGION")}.amazonaws.com/{obj["Key"]}",
                     "created_at": obj["LastModified"],
                     "file_size": obj["Size"],
                     "s3_key": obj["Key"],
+                    "is_in_folder": obj["Key"].split("/")[1] != "snap",
                 }
                 for obj in response["Contents"]
             ]
@@ -116,7 +122,7 @@ class S3:
     @classmethod
     def read_newest_snap(cls, user_id: int) -> str:
         try:
-            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/snap/")
+            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             
             if response["KeyCount"] == 0:
                 return ""
@@ -129,11 +135,30 @@ class S3:
     @classmethod
     def get_snap_count(cls, user_id: int) -> int:
         try:
-            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/snap/")
+            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             return response["KeyCount"]
         
         except ClientError as e:
             cls._raise_client_operation_error("get_snap_count", e)
+            
+    @classmethod
+    def get_snap_folder_count(cls, user_id: int) -> int:
+        try:
+            response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
+            
+            count = 0
+            
+            for obj in response["Contents"]:
+                obj_key_split = obj["Key"].split("/")
+                
+                if obj_key_split[1] != "snap":
+                    count += 1
+
+            return count
+        
+        except ClientError as e:
+            cls._raise_client_operation_error("get_snap_folder_count", e)
+            
 
     @classmethod
     def delete_snap(cls, s3_key: str) -> None:

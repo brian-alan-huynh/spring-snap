@@ -24,6 +24,7 @@ class NormalDetailsResponse(BaseModel):
     created_at: str
     last_login_at: str
     snap_count: int
+    snap_folder_count: int
     
 class OAuthDetailsResponse(BaseModel):
     is_oauth: bool
@@ -33,6 +34,7 @@ class OAuthDetailsResponse(BaseModel):
     created_at: str
     last_login_at: str
     snap_count: int
+    snap_folder_count: int
     
 DetailsResponse = NormalDetailsResponse | OAuthDetailsResponse
 
@@ -60,6 +62,7 @@ async def details(request: Request):
     
         details = user_details | user_preferences_details
         details["snap_count"] = S3.get_snap_count(user_id)
+        details["snap_folder_count"] = S3.get_snap_folder_count(user_id)
         
         if details["is_oauth"]:
             return OAuthDetailsResponse(**details)

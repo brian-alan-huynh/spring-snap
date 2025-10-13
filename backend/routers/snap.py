@@ -18,10 +18,11 @@ router = APIRouter(
 
 # Pydantic models
 class SnapData(BaseModel):
-    img_url: str
+    file_url: str
     created_at: str
     file_size: int
     s3_key: str
+    is_in_folder: bool
     tags: list[str]
     caption: str
 
@@ -62,10 +63,11 @@ async def all(request: Request):
         
         for snap, tags_and_caption in zip(snaps, img_tags_and_captions):
             snaps_with_tags_and_captions.append({
-                "img_url": snap["img_url"],
+                "file_url": snap["file_url"],
                 "created_at": snap["created_at"],
                 "file_size": snap["file_size"],
                 "s3_key": snap["s3_key"],
+                "is_in_folder": snap["is_in_folder"],
                 "tags": tags_and_caption["tags"],
                 "caption": tags_and_caption["caption"],
             })
@@ -80,6 +82,7 @@ async def all(request: Request):
 async def upload(
     request: Request,
     img_file: UploadFile,
+    folder_name: str | None,
     csrf_protect: CsrfProtect = Depends(),
 ):
     await csrf_protect.validate_csrf(request)
@@ -90,7 +93,7 @@ async def upload(
         session = Redis.get_session(session_key)
         user_id = session["user_id"]
         
-        img_url, s3_key = await S3.upload_snap(user_id, img_file)
+        img_url, s3_key = await S3.upload_snap(user_id, img_file, folder_name)
         Redis.place_thumbnail_img_url(session_key, img_url)
         tags = await yolov11_detect_img_objects(img_file)
         MongoDB.add_img_tags(user_id, s3_key, tags)
