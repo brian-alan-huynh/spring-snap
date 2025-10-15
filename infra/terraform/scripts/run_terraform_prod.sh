@@ -57,7 +57,7 @@ echo -e "\nExporting .env variables to Terraform\n"
 
 for key in "${!env_vars[@]}"; do
     if [ -z "${!key:-}" ]; then
-        echo "Error: Missing .env variable called ${key}" >&2
+        echo -e "\nError: Missing .env variable called ${key}\n" >&2
         exit 1
     fi
 
