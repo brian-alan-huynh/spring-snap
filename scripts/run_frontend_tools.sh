@@ -15,7 +15,7 @@ while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
 done
 
 if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
-    echo "Error: Unable to find project root dir"
+    echo -e "\nError: Unable to find project root dir\n"
     exit 1
 fi
 
@@ -25,14 +25,14 @@ FRONTEND_PATH="${PROJECT_ROOT_DIR}/frontend"
 
 cd "$FRONTEND_PATH"
 
-echo "Starting ESLint test for code analysis and quality"
+echo -e "\nStarting ESLint test for code analysis and quality\n"
 
 pnpm lint
 
-echo "ESLint analysis completed"
+echo -e "\nESLint analysis completed\n"
 
-echo "Starting Jest tests for unit and integration testing"
+echo -e "\nStarting Jest tests for unit and integration testing\n"
 
 pnpm test
 
-echo "Jest testing completed with a code coverage report generated"
+echo -e "\nJest testing completed with a code coverage report generated\n"

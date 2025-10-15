@@ -15,7 +15,7 @@ while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
 done
 
 if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
-    echo "Error: Unable to find project root dir"
+    echo -e "\nError: Unable to find project root dir\n"
     exit 1
 fi
 
@@ -43,17 +43,17 @@ declare -A env_vars=(
     [APP_CSRF_SECRET_KEY]="app_csrf_secret_key"
 )
 
-echo "Loading .env variables"
+echo -e "\nLoading .env variables\n"
 
 set -o allexport
 source "$BACKEND_ENV_PATH"
 set +o allexport
 
-echo "Finished loading .env variables"
+echo -e "\nFinished loading .env variables\n"
 
 cd "$TF_PROD_ENV_PATH"
 
-echo "Exporting .env variables to Terraform"
+echo -e "\nExporting .env variables to Terraform\n"
 
 for key in "${!env_vars[@]}"; do
     if [ -z "${!key:-}" ]; then
@@ -64,12 +64,12 @@ for key in "${!env_vars[@]}"; do
     export TF_VAR_${env_vars[$key]}="${!key}"
 done
 
-echo ".env variables successfully exported to Terraform"
+echo -e "\n.env variables successfully exported to Terraform\n"
 
-echo "Provisioning Terraform resources"
+echo -e "\nProvisioning Terraform resources\n"
 
 terraform init
 terraform plan
 terraform apply -auto-approve
 
-echo "Terraform resources successfully created"
+echo -e "\nTerraform resources successfully created\n"

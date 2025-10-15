@@ -15,7 +15,7 @@ while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
 done
 
 if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
-    echo "Error: Unable to find project root dir"
+    echo -e "\nError: Unable to find project root dir\n"
     exit 1
 fi
 
@@ -23,33 +23,33 @@ PROJECT_ROOT_DIR="${CURRENT_DIR}"
 
 K6_PATH="${PROJECT_ROOT_DIR}/k6"
 
-echo "Checking for required environment variable's existence"
+echo -e "\nChecking for required environment variable's existence\n"
 
 BASE_URL="$1"
 WEB_URL="$2"
 K6_CLOUD_TOKEN="$3"
 
 if [ -z "${BASE_URL}" ]; then
-  echo "Error: BASE_URL environment variable must be set"
+  echo -e "\nError: BASE_URL environment variable must be set\n"
   exit 1
 fi
 
 if [ -z "${WEB_URL}" ]; then
-  echo "Error: WEB_URL environment variable must be set"
+  echo -e "\nError: WEB_URL environment variable must be set\n"
   exit 1
 fi
 
 if [ -z "${K6_CLOUD_TOKEN}" ]; then
-  echo "Error: K6_CLOUD_TOKEN environment variable must be set"
+  echo -e "\nError: K6_CLOUD_TOKEN environment variable must be set\n"
   exit 1
 fi
 
-echo "All required environment variables are present"
+echo -e "\nAll required environment variables are present\n"
 
 K6_TEST_FILE="${K6_PATH}/load-test.js"
 SUMMARY_OUTPUT_FILE="${K6_PATH}/reports/load-test-summary.json"
 
-echo "Starting K6 container"
+echo -e "\nStarting K6 container\n"
 
 docker run \
   --rm \
@@ -65,12 +65,12 @@ docker run \
     --summary-export="${SUMMARY_OUTPUT_FILE}" \
     "${K6_TEST_FILE}"
 
-echo "K6 load testing execution finished"
+echo -e "\nK6 load testing execution finished\n"
 
 if [ -f "${SUMMARY_OUTPUT_FILE}" ]; then
-  echo "${SUMMARY_OUTPUT_FILE} load test summary report has been generated"
+  echo -e "\n${SUMMARY_OUTPUT_FILE} load test summary report has been generated\n"
 else
-  echo "Warning, ${SUMMARY_OUTPUT_FILE} load test summary report was not created"
+  echo -e "\nWarning, ${SUMMARY_OUTPUT_FILE} load test summary report was not created\n"
 fi
 
-echo "K6 load testing successfully completed"
+echo -e "\nK6 load testing successfully completed\n"

@@ -15,7 +15,7 @@ while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
 done
 
 if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
-    echo "Error: Unable to find project root dir"
+    echo -e "\nError: Unable to find project root dir\n"
     exit 1
 fi
 
@@ -25,7 +25,7 @@ BACKEND_PATH="${PROJECT_ROOT_DIR}/backend"
 
 cd "$BACKEND_PATH"
 
-echo "Starting Pylint tests for static code analysis and code quality"
+echo -e "\nStarting Pylint tests for static code analysis and code quality\n"
 
 mapfile -t py_files < <(find "${BACKEND_PATH}" -type f -name "*.py" \
     ! -path "*/venv/*" \
@@ -38,31 +38,31 @@ mapfile -t py_files < <(find "${BACKEND_PATH}" -type f -name "*.py" \
 if [ "${#py_files[@]}" -gt 0 ]; then
     pylint "${py_files[@]}"
 else
-    echo "No .py files found for a Pylint analysis"
+    echo -e "\nNo .py files found for a Pylint analysis\n"
 fi
 
-echo "Pylint analysis completed"
+echo -e "\nPylint analysis completed\n"
 
-echo "Starting Pyre type checking"
+echo -e "\nStarting Pyre type checking\n"
 
 if [[ ! -f "${BACKEND_PATH}/.pyre_configuration" ]]; then
-    echo "Initializing Pyre"
+    echo -e "\nInitializing Pyre\n"
     pyre init
 fi
 
-echo "Running Pyre type checking"
+echo -e "\nRunning Pyre type checking\n"
 pyre --noninteractive check --output json > "${BACKEND_PATH}/reports/pyreTypeCheckingReport.json"
 
-echo "Pyre type checking completed"
+echo -e "\nPyre type checking completed\n"
 
-echo "Starting Pytest tests for unit and integration testing"
+echo -e "\nStarting Pytest tests for unit and integration testing\n"
 
 pytest --strict-markers --cov="${BACKEND_PATH}" --cov-report=term --cov-report=xml:"${BACKEND_PATH}/reports/codeCoverageReport.xml"
 
-echo "Pytest testing completed"
+echo -e "\nPytest testing completed\n"
 
-echo "Testing and analysis completed"
-echo "Pylint code analysis passed"
-echo "Pytests code testing passed"
-echo "Pyre type checking passed"
-echo "Code coverage testing reports generated as an XML file, called codeCoverageReport.xml"
+echo -e "\nTesting and analysis completed\n"
+echo -e "\nPylint code analysis passed\n"
+echo -e "\nPytests code testing passed\n"
+echo -e "\nPyre type checking passed\n"
+echo -e "\nCode coverage testing reports generated as an XML file, called codeCoverageReport.xml\n"

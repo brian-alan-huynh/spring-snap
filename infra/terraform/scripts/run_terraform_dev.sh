@@ -15,7 +15,7 @@ while [ ! -f "${CURRENT_DIR}/${MARKER}" ] && [ "$CURRENT_DIR" != "/" ]; do
 done
 
 if [ ! -f "${CURRENT_DIR}/${MARKER}" ]; then
-    echo "Error: Unable to find project root dir"
+    echo -e "\nError: Unable to find project root dir\n"
     exit 1
 fi
 
@@ -24,13 +24,13 @@ PROJECT_ROOT_DIR="${CURRENT_DIR}"
 BACKEND_ENV_PATH="${PROJECT_ROOT_DIR}/backend/.env"
 TF_DEV_ENV_PATH="${PROJECT_ROOT_DIR}/infra/terraform/environments/dev"
 
-echo "Provisioning Terraform resources"
+echo -e "\nProvisioning Terraform resources\n"
 
 terraform -chdir="$TF_DEV_ENV_PATH" init
 terraform -chdir="$TF_DEV_ENV_PATH" plan
 terraform -chdir="$TF_DEV_ENV_PATH" apply -auto-approve
 
-echo "Terraform resources successfully created"
+echo -e "\nTerraform resources successfully created\n"
 
 tf_outputs="$(terraform -chdir="$TF_DEV_ENV_PATH" output -json)"
 
@@ -40,7 +40,7 @@ get_tf_output() {
     value="$(echo "$tf_outputs" | jq -r ".${key}.value")"
 
     if [[ -z "$value" || "$value" == "null" ]]; then
-        echo "Error: Missing Terraform output for ${key}" >&2
+        echo -e "\nError: Missing Terraform output for ${key}\n" >&2
         exit 1
     fi
 
@@ -58,14 +58,14 @@ declare -A outputs=(
     [MONGODB_DB_NAME]="mongodb_db_name"
 )
 
-echo "Exporting Terraform outputs to .env file"
+echo -e "\nExporting Terraform outputs to .env file\n"
 
 for key in "${!outputs[@]}"; do
     output="$(get_tf_output "${outputs[$key]}")"
     sed -i.bak "s|^${key}=.*|${key}=${output}|" "$BACKEND_ENV_PATH"
 done
 
-echo "Terraform outputs successfully exported to .env file"
+echo -e "\nTerraform outputs successfully exported to .env file\n"
 
-echo ".env file with brand new environment variables:"
+echo -e "\n.env file with brand new environment variables:\n"
 cat "$BACKEND_ENV_PATH"
