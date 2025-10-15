@@ -43,6 +43,18 @@ fi
 
 echo "Pylint analysis completed"
 
+echo "Starting Pyre type checking"
+
+if [[ ! -f "${BACKEND_PATH}/.pyre_configuration" ]]; then
+    echo "Initializing Pyre"
+    pyre init
+fi
+
+echo "Running Pyre type checking"
+pyre --noninteractive check --output json > "${BACKEND_PATH}/reports/pyreTypeCheckingReport.json"
+
+echo "Pyre type checking completed"
+
 echo "Starting Pytest tests for unit and integration testing"
 
 pytest --strict-markers --cov="${BACKEND_PATH}" --cov-report=term --cov-report=xml:"${BACKEND_PATH}/reports/codeCoverageReport.xml"
@@ -52,4 +64,5 @@ echo "Pytest testing completed"
 echo "Testing and analysis completed"
 echo "Pylint code analysis passed"
 echo "Pytests code testing passed"
+echo "Pyre type checking passed"
 echo "Code coverage testing reports generated as an XML file, called codeCoverageReport.xml"
