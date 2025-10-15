@@ -99,7 +99,7 @@ async def security_headers(request: Request, call_next):
     res.headers["X-Frame-Options"] = "DENY"
     res.headers["Referrer-Policy"] = "no-referrer"
 
-    if settings.env == "prod":
+    if settings.environment == "prod":
         res.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
     return res

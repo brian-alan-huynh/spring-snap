@@ -77,6 +77,10 @@ resource "aws_ecs_task_definition" "backend" {
 
       environment = [
         {
+          name = "ENVIRONMENT"
+          value = var.environment
+        },
+        {
           name  = "AWS_REGION"
           value = var.region
         },

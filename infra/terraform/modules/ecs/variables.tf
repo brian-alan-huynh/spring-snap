@@ -28,28 +28,9 @@ variable "ecr_repository_url_frontend" {
   type        = string
 }
 
-variable "docker_registry" {
-  description = "Docker registry URL (i.e, Docker Hub, ECR, etc)"
+variable "environment" {
+  description = "Env name of the app"
   type        = string
-  default     = "docker.io"
-}
-
-variable "backend_image_name" {
-  description = "Name of the backend Docker image"
-  type        = string
-  default     = "springsnap/backend"
-}
-
-variable "frontend_image_name" {
-  description = "Name of the frontend Docker image"
-  type        = string
-  default     = "springsnap/frontend"
-}
-
-variable "image_tag" {
-  description = "Tag of the image"
-  type        = string
-  default     = "latest"
 }
 
 variable "s3_bucket_name" {
