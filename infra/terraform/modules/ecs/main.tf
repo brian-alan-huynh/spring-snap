@@ -77,7 +77,7 @@ resource "aws_ecs_task_definition" "backend" {
 
       environment = [
         {
-          name = "ENVIRONMENT"
+          name  = "ENVIRONMENT"
           value = var.environment
         },
         {
