@@ -8,7 +8,7 @@ trap 'echo "Script finished (exit code $?)"' EXIT
 echo -e "\nStarting Curby Storage entrypoint script\n"
 
 echo -e "\nEnvironment: ${ENVIRONMENT:-not set}"
-echo -e "Python version: $(python --version)"
+echo "Python version: $(python --version)"
 echo -e "Working directory: $(pwd)\n"
 
 wait_for_service() {
