@@ -16,7 +16,6 @@ variable "vpc_id" {
 variable "allowed_security_group_ids" {
   description = "List of security group IDs for the RDS instance"
   type        = list(string)
-  default     = []
 }
 
 variable "local_cidr_block" {

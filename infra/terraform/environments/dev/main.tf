@@ -215,7 +215,8 @@ module "rds" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnet_ids
 
-  local_cidr_block = "${chomp(data.http.local_public_ip.response_body)}/32"
+  allowed_security_group_ids = []
+  local_cidr_block           = "${chomp(data.http.local_public_ip.response_body)}/32"
 
   environment = var.environment
   kms_policy  = local.kms_policy
@@ -229,8 +230,10 @@ module "s3" {
 
   name_prefix = local.name_prefix
 
-  environment = var.environment
-  account_id  = local.account_id
+  environment                 = var.environment
+  account_id                  = local.account_id
+  cloudfront_distribution_arn = null
+  frontend_domain_name        = "http://localhost:3000"
 
   tags = local.common_tags
 }

@@ -16,13 +16,11 @@ variable "account_id" {
 variable "cloudfront_distribution_arn" {
   description = "CloudFront distribution ARN (not used in /dev)"
   type        = string
-  default     = null
 }
 
 variable "frontend_domain_name" {
   description = "Frontend domain name"
   type        = string
-  default     = "http://localhost:3000"
 }
 
 variable "tags" {
