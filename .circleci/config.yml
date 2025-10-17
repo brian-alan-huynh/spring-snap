@@ -1,8 +1,278 @@
-# ensure to do the exporting terraform outputs to .env
-# get the grafana api keys for dashboard and k6 and export these credentials to the .sh file
-# use terraform apply -auto-approve
-# run k6 load tests as the last .sh script, after running docker push to ecr; docker push to ecr comes after running terraform prod
+version: 2.1
 
-# in the dashboard, create a Context and environment variables within that Context called REDISCLOUD_ACCESS_KEY and REDISCLOUD_SECRET_KEY.
-# reference the redis credentials in these environment variables. then, in the jobs, run a command that exports REDISCLOUD_ACCESS_KEY and REDISCLOUD_SECRET_KEY
-# as the key and with the Context environment variables as the value
+orbs:
+  python: circleci/python@2.1.1
+  node: circleci/node@6.1.0
+
+executors:
+  python-executor:
+    docker:
+      - image: cimg/python:3.13.5
+    working_directory: ~/project
+    resource_class: medium
+  
+  node-executor:
+    docker:
+      - image: cimg/node:24.10.0
+    working_directory: ~/project
+    resource_class: medium
+  
+  machine-executor:
+    machine:
+      image: ubuntu-2404:current
+    working_directory: ~/project
+    resource_class: medium
+
+commands:
+  install_terraform:
+    description: Install Terraform with Linux AMD64 zip file
+    steps:
+      - run:
+          name: Install Terraform
+          command: |
+            wget -O terraform.zip https://releases.hashicorp.com/terraform/1.10.0/terraform_1.10.0_linux_amd64.zip
+            unzip terraform.zip
+            sudo mv terraform /usr/local/bin/
+            terraform --version
+  
+  install_jq:
+    description: Install jq
+    steps:
+      - run:
+          name: Install jq
+          command: sudo apt-get update && sudo apt-get install -y jq
+
+  setup_redis_creds:
+    description: Export Redis credentials from Context env variables to Terraform
+    steps:
+      - run:
+          name: Export Redis credentials to Terraform
+          command: |
+            echo "export REDISCLOUD_ACCESS_KEY=${REDISCLOUD_ACCESS_KEY}" >> $BASH_ENV
+            echo "export REDISCLOUD_SECRET_KEY=${REDISCLOUD_SECRET_KEY}" >> $BASH_ENV
+            source $BASH_ENV
+
+jobs:
+  backend-tests:
+    executor: python-executor
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          args: "-r backend/requirements.txt -r backend/requirements-dev.txt"
+          cache-version: v1
+          path: ~/project/backend
+          pip-dependency-file: backend/requirements.txt
+      - run:
+          name: Make backend tools script executable
+          command: chmod +x ~/project/scripts/run_backend_tools.sh
+      - run:
+          name: Run backend tools script
+          command: ~/project/scripts/run_backend_tools.sh
+      - store_test_results:
+          path: ~/project/backend/reports
+      - store_artifacts:
+          path: ~/project/backend/reports
+          destination: backend-reports
+  
+  frontend-tests:
+    executor: node-executor
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: pnpm
+          cache-version: v1
+          app-dir: ~/project/frontend
+      - run:
+          name: Make frontend tools script executable
+          command: chmod +x ~/project/scripts/run_frontend_tools.sh
+      - run:
+          name: Run frontend tools script
+          command: ~/project/scripts/run_frontend_tools.sh
+      - store_test_results:
+          path: ~/project/frontend/reports
+      - store_artifacts:
+          path: ~/project/frontend/reports
+          destination: frontend-reports
+
+  terraform-dev:
+    executor: machine-executor
+    steps:
+      - checkout
+      - install_terraform
+      - install_jq
+      - run:
+          name: Make Terraform dev script executable
+          command: chmod +x ~/project/infra/terraform/scripts/run_terraform_dev.sh
+      - setup_redis_credentials
+      - run:
+          name: Run Terraform dev script
+          command: ~/project/infra/terraform/scripts/run_terraform_dev.sh
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - backend/.env
+            - infra/terraform/environments/dev
+
+  terraform-prod:
+    executor: machine-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - install_terraform
+      - run:
+          name: Make Terraform prod script executable
+          command: chmod +x ~/project/infra/terraform/scripts/run_terraform_prod.sh
+      - setup_redis_credentials
+      - run:
+          name: Run Terraform prod script
+          command: ~/project/infra/terraform/scripts/run_terraform_prod.sh
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - backend/.env
+            - infra/terraform/environments/prod
+
+  docker-push-ecr:
+    executor: machine-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install AWS CLI
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws --version
+      - run:
+          name: Configure AWS CLI
+          command: |
+            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+            aws configure set default.region ${AWS_REGION}
+            aws sts get-caller-identity
+      - install_terraform
+      - install_jq
+      - run:
+          name: Make Docker push ECR script executable
+          command: chmod +x ~/project/infra/terraform/scripts/run_docker_push_ecr.sh
+      - run:
+          name: Build and push backend and frontend Docker images to ECR
+          command: ~/project/infra/terraform/scripts/run_docker_push_ecr.sh
+  
+  load-test:
+    executor: machine-executor
+    steps:
+      - checkout
+      - run:
+          name: Make K6 load test script executable
+          command: chmod +x ~/project/scripts/run_load_test.sh
+      - run:
+          name: Run K6 load test script
+          command: ~/project/scripts/run_load_test.sh "${BASE_URL}" "${WEB_URL}" "${K6_CLOUD_TOKEN}"
+      - store_artifacts:
+          path: ~/project/k6/reports
+          destination: load-test-reports
+
+workflows:
+  version: 2
+
+  # Prod workflow (runs on main branch when merged)
+  production:
+    jobs:
+      # Workflow stage 1: Tests
+      - backend-tests:
+          context:
+            - curby-storage-context
+          filters:
+            branches:
+              only: main
+
+      - frontend-tests:
+          context:
+            - curby-storage-context
+          filters:
+            branches:
+              only: main
+      
+      # Workflow stage 2: Terraform dev
+      - terraform-dev:
+          context:
+            - curby-storage-context
+          requires:
+            - backend-tests
+            - frontend-tests
+          filters:
+            branches:
+              only: main
+      
+      # Workflow stage 3: Hold for approval
+      - hold-for-approval:
+          type: approval
+          requires:
+            - terraform-dev
+          filters:
+            branches:
+              only: main
+
+      # Workflow stage 4: Terraform prod
+      - terraform-prod:
+          context:
+            - curby-storage-context
+          requires:
+            - hold-for-approval
+          filters:
+            branches:
+              only: main
+      
+      # Workflow stage 5: Build and push Docker images to ECR
+      - docker-push-ecr:
+          context:
+            - curby-storage-context
+          requires:
+            - terraform-prod
+          filters:
+            branches:
+              only: main
+      
+      # Workflow stage 6: Load testing
+      - load-test:
+          context:
+            - curby-storage-context
+          requires:
+            - docker-push-ecr
+          filters:
+            branches:
+              only: main
+
+  # Dev workflow (runs only on "infra/..." branches)
+  development:
+    jobs:
+      # Workflow stage 1: Tests
+      - backend-tests:
+          context:
+            - curby-storage-context
+          filters:
+            branches:
+              only: /^infra\/.*/
+
+      - frontend-tests:
+          context:
+            - curby-storage-context
+          filters:
+            branches:
+              only: /^infra\/.*/
+
+      # Workflow stage 2: Terraform dev
+      - terraform-dev:
+          context:
+            - curby-storage-context
+          requires:
+            - backend-tests
+            - frontend-tests
+          filters:
+            branches:
+              only: /^infra\/.*/
