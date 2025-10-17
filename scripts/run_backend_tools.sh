@@ -57,7 +57,7 @@ echo -e "\nPyre type checking completed\n"
 
 echo -e "\nStarting Pytest tests for unit and integration testing\n"
 
-pytest --strict-markers --cov="${BACKEND_PATH}" --cov-report=term --cov-report=xml:"${BACKEND_PATH}/reports/codeCoverageReport.xml"
+pytest --strict-markers --cov="${BACKEND_PATH}" --cov-report=term --cov-report=json:"${BACKEND_PATH}/reports/codeCoverageReport.json"
 
 echo -e "\nPytest testing completed\n"
 
@@ -65,4 +65,4 @@ echo -e "\nTesting and analysis completed\n"
 echo -e "\nPylint code analysis passed\n"
 echo -e "\nPytests code testing passed\n"
 echo -e "\nPyre type checking passed\n"
-echo -e "\nCode coverage testing reports generated as an XML file, called codeCoverageReport.xml\n"
+echo -e "\nCode coverage testing reports generated as an JSON file, called codeCoverageReport.json\n"

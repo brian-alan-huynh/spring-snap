@@ -14,9 +14,9 @@ const config: Config = {
     reporters: [
         'default',
         [
-            'jest-junit',
+            'jest-json-reporter',
             {
-                outputFile: '<rootDir>/reports/codeTestsReport.xml',
+                outputFile: '<rootDir>/reports/codeTestsReport.json',
                 suiteName: 'Frontend Code Tests',
                 addFileAttribute: true,
                 ancestorSeparator: ' > ',
