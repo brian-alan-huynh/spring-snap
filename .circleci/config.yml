@@ -154,6 +154,7 @@ jobs:
             aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
             aws configure set default.region ${AWS_REGION}
             aws sts get-caller-identity
+            echo "AWS CLI and creds configured successfully"
       - install_terraform
       - install_jq
       - run:
