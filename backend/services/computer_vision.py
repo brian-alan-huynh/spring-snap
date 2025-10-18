@@ -3,29 +3,27 @@ import base64
 
 import requests as req
 from dotenv import load_dotenv
-from fastapi import UploadFile
-
-from backend.main import app
+from fastapi import UploadFile, Request
 
 class YOLOv11Error(Exception):
     "Exception for YOLOv11 operations"
     pass
 
-def yolov11_error_handler(error: Exception = None) -> None:
+def yolov11_error_handler(request: Request, error: Exception = None) -> None:
     if error:
         error_message = f"Failed to perform YOLOv11 detection in yolov11_detect_file_objects: {error}"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise YOLOv11Error(error_message) from error
 
     else:
         error_message = "Failed to perform YOLOv11 detection in yolov11_detect_file_objects"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise YOLOv11Error(error_message)
 
 load_dotenv()
 env = os.getenv
 
-async def yolov11_detect_file_objects(file: UploadFile) -> list[str]:
+async def yolov11_detect_file_objects(file: UploadFile, request: Request) -> list[str]:
     try:
         file_content = await file.read()
         file_base64 = str(base64.b64encode(file_content).decode("utf-8"))
@@ -47,7 +45,7 @@ async def yolov11_detect_file_objects(file: UploadFile) -> list[str]:
         )
         
         if res.status_code != 200:
-            yolov11_error_handler()
+            yolov11_error_handler(request)
         
         data = res.json()
         
@@ -62,4 +60,4 @@ async def yolov11_detect_file_objects(file: UploadFile) -> list[str]:
         raise
     
     except Exception as e:
-        yolov11_error_handler(e)
+        yolov11_error_handler(request, e)
