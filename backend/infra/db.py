@@ -3,9 +3,9 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
+from fastapi import Request
 
-from backend.main import app
-from backend.config.config import RDS_ENGINE
+from config.config import RDS_ENGINE
 
 class RDSOperationError(Exception):
     "Exception for RDS operations"
@@ -43,19 +43,31 @@ class RDS:
         Base.metadata.create_all(bind=RDS_ENGINE, checkfirst=True)
         self.SessionLocal = sessionmaker(bind=RDS_ENGINE, autocommit=False, autoflush=False)
         
-    def _raise_db_operation_failure(self, func_name: str, error: Exception) -> None:
+    def _raise_db_operation_failure(
+            self,
+            func_name: str,
+            error: Exception,
+            request: Request,
+        ) -> None:
+
         error_message = f"Failed to fulfill RDS database operation in {func_name}: {error}"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise RDSOperationError(error_message) from error
         
-    def _raise_db_fetch_failure(self, func_name: str) -> None:
+    def _raise_db_fetch_failure(
+            self,
+            func_name: str,
+            request: Request,
+        ) -> None:
+
         error_message = f"Failed to fetch data from RDS database in {func_name}"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise RDSFetchError(error_message)
 
     # User table
     def create_user(
             self,
+            request: Request,
             first_name: str,
             username: str | None = None, 
             password: str | None = None, 
@@ -95,19 +107,19 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("create_user", e)
+            self._raise_db_operation_failure("create_user", e, request)
 
         finally:
             db.close()
 
-    def read_user(self, user_id: int) -> dict[str, str | int]:
+    def read_user(self, user_id: int, request: Request) -> dict[str, str | int]:
         db = self.SessionLocal()
 
         try:
             db_user = db.query(User).filter(User.id == user_id).first()
 
             if not db_user:
-                self._raise_db_fetch_failure("read_user")
+                self._raise_db_fetch_failure("read_user", request)
 
             if db_user.oauth_provider:
                 return {
@@ -134,13 +146,14 @@ class RDS:
             raise
 
         except Exception as e:
-            self._raise_db_operation_failure("read_user", e)
+            self._raise_db_operation_failure("read_user", e, request)
 
         finally:
             db.close()
                 
     def update_user(
-            self, 
+            self,
+            request: Request,
             user_id: int, 
             username: str | None = None, 
             password: str | None = None, 
@@ -154,7 +167,7 @@ class RDS:
             db_user = db.query(User).filter(User.id == user_id).first()
 
             if not db_user:
-                self._raise_db_fetch_failure("update_user")
+                self._raise_db_fetch_failure("update_user", request)
             
             if username:
                 db_user.username = username
@@ -175,19 +188,19 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("update_user", e)
+            self._raise_db_operation_failure("update_user", e, request)
 
         finally:
             db.close()
 
-    def delete_user(self, user_id: int) -> None:
+    def delete_user(self, user_id: int, request: Request) -> None:
         db = self.SessionLocal()
 
         try:
             db_user = db.query(User).filter(User.id == user_id).first()
 
             if not db_user:
-                self._raise_db_fetch_failure("delete_user")
+                self._raise_db_fetch_failure("delete_user", request)
 
             db.delete(db_user)
             db.commit()
@@ -199,13 +212,13 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("delete_user", e)
+            self._raise_db_operation_failure("delete_user", e, request)
 
         finally:
             db.close()
 
     # UserPreferences table
-    def create_user_preference(self, user_id: int, theme: str) -> None:
+    def create_user_preference(self, user_id: int, theme: str, request: Request) -> None:
         db = self.SessionLocal()
 
         try:
@@ -219,19 +232,19 @@ class RDS:
         
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("create_user_preference", e)
+            self._raise_db_operation_failure("create_user_preference", e, request)
         
         finally:
             db.close()
 
-    def read_user_preference(self, user_id: int) -> dict[str, str]:
+    def read_user_preference(self, user_id: int, request: Request) -> dict[str, str]:
         db = self.SessionLocal()
 
         try:
             db_user_preference = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
 
             if not db_user_preference:
-                self._raise_db_fetch_failure("read_user_preference")
+                self._raise_db_fetch_failure("read_user_preference", request)
 
             return { "theme": db_user_preference.theme }
         
@@ -239,7 +252,7 @@ class RDS:
             raise
 
         except Exception as e:
-            self._raise_db_operation_failure("read_user_preference", e)
+            self._raise_db_operation_failure("read_user_preference", e, request)
 
         finally:
             db.close()
@@ -247,7 +260,8 @@ class RDS:
     def update_user_preference(
             self, 
             user_id: int, 
-            theme: str, 
+            theme: str,
+            request: Request,
         ) -> None:
 
         db = self.SessionLocal()
@@ -256,7 +270,7 @@ class RDS:
             db_user_preference = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
             
             if not db_user_preference:
-                self._raise_db_fetch_failure("update_user_preference")
+                self._raise_db_fetch_failure("update_user_preference", request)
 
             db_user_preference.theme = theme
             
@@ -270,19 +284,19 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("update_user_preference", e)
+            self._raise_db_operation_failure("update_user_preference", e, request)
 
         finally:
             db.close()
 
-    def delete_user_preference(self, user_id: int) -> None:
+    def delete_user_preference(self, user_id: int, request: Request) -> None:
         db = self.SessionLocal()
 
         try:
             db_user_preference = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
 
             if not db_user_preference:
-                self._raise_db_fetch_failure("delete_user_preference")
+                self._raise_db_fetch_failure("delete_user_preference", request)
 
             db.delete(db_user_preference)
             db.commit()
@@ -294,13 +308,13 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("delete_user_preference", e)
+            self._raise_db_operation_failure("delete_user_preference", e, request)
 
         finally:
             db.close()
 
     # Authentication
-    def check_normal_login_creds(self, username_or_email: str, password: str) -> bool | dict[str, str]:
+    def check_normal_login_creds(self, username_or_email: str, password: str, request: Request) -> bool | dict[str, str]:
         db = self.SessionLocal()
 
         try:
@@ -322,12 +336,12 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("check_normal_login_creds", e)
+            self._raise_db_operation_failure("check_normal_login_creds", e, request)
 
         finally:
             db.close()
     
-    def fetch_normal_user(self, username_or_email: str, password: str) -> int:
+    def fetch_normal_user(self, username_or_email: str, password: str, request: Request) -> int:
         db = self.SessionLocal()
 
         try:
@@ -337,10 +351,10 @@ class RDS:
                 db_user = db.query(User).filter(User.email == username_or_email).first()
 
             if not db_user:
-                self._raise_db_fetch_failure("fetch_normal_user")
+                self._raise_db_fetch_failure("fetch_normal_user", request)
 
             if not bcrypt.checkpw(password.encode("utf-8"), db_user.password.encode("utf-8")):
-                self._raise_db_fetch_failure("fetch_normal_user")
+                self._raise_db_fetch_failure("fetch_normal_user", request)
                 
             db_user.last_login_at = func.now()
 
@@ -354,12 +368,12 @@ class RDS:
         
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("fetch_normal_user", e)
+            self._raise_db_operation_failure("fetch_normal_user", e, request)
 
         finally:
             db.close()
     
-    def check_and_fetch_oauth_login_creds(self, oauth_user_id: str) -> bool | int:
+    def check_and_fetch_oauth_login_creds(self, oauth_user_id: str, request: Request) -> bool | int:
         db = self.SessionLocal()
 
         try:
@@ -377,7 +391,7 @@ class RDS:
 
         except Exception as e:
             db.rollback()
-            self._raise_db_operation_failure("check_and_fetch_oauth_login_creds", e)
+            self._raise_db_operation_failure("check_and_fetch_oauth_login_creds", e, request)
 
         finally:
             db.close()

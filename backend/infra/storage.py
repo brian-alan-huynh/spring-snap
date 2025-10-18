@@ -4,13 +4,13 @@ import json
 from io import BytesIO
 from datetime import datetime
 
+from fastapi import Request
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 from fastapi import UploadFile
 
 from .messaging import kafka_producer
-from backend.main import app
-from backend.config.config import S3_CLIENT, BUCKET_NAME
+from config.config import S3_CLIENT, BUCKET_NAME
 
 class S3Error(Exception):
     "Exception for S3 operations"
@@ -33,21 +33,36 @@ env = os.getenv
 
 class S3:
     @staticmethod
-    def _raise_client_operation_error(func_name: str, error: Exception) -> None:
+    def _raise_client_operation_error(
+            func_name: str,
+            error: Exception,
+            request: Request,
+        ) -> None:
+
         error_message = f"Failed to perform operation on S3 in {func_name}: {error}"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise S3Error(error_message) from error
     
     @staticmethod
-    def _raise_kafka_message_delivery_failure(func_name: str, remaining_messages: int) -> None:
+    def _raise_kafka_message_delivery_failure(
+            func_name: str,
+            remaining_messages: int,
+            request: Request,
+        ) -> None:
+
         error_message = f"Failed to deliver message to Kafka in {func_name}: {remaining_messages} messages (within 15 seconds)"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise KafkaProduceDeliveryError(error_message)
     
     @staticmethod
-    def _raise_kafka_message_produce_failure(func_name: str, error: Exception) -> None:
+    def _raise_kafka_message_produce_failure(
+            func_name: str,
+            error: Exception,
+            request: Request,
+        ) -> None:
+
         error_message = f"Failed to produce message to Kafka in {func_name}: {error}"
-        app.state.logger.log_error(error_message)
+        request.app.state.logger.log_error(error_message)
         raise KafkaProduceOperationError(error_message) from error
     
     @staticmethod
@@ -64,14 +79,20 @@ class S3:
         return f"{user_id}/snap/{timestamp}_{unique_id}{file_extension}"
 
     @classmethod
-    async def upload_snap(cls, user_id: int, file: UploadFile, folder_name: str | None) -> tuple[str, str]:
+    async def upload_snap(
+            cls,
+            user_id: int,
+            file: UploadFile,
+            folder_name: str | None,
+            request: Request,
+        ) -> tuple[str, str]:
+
         try:
             file_extension = os.path.splitext(file.filename)[1].lower()
             
             if file_extension not in [".jpg", ".jpeg", ".png", ".gif"]:
                 error_message = f"Invalid file extension: {file_extension}"
-                
-                app.state.logger.log_error(error_message)
+                request.app.state.logger.log_error(error_message)
                 raise S3FileExtensionError(error_message)
                 
             s3_key = cls._generate_s3_key(user_id, file.filename, folder_name)
@@ -93,10 +114,10 @@ class S3:
             raise
         
         except ClientError as e:
-            cls._raise_client_operation_error("upload_snap", e)
+            cls._raise_client_operation_error("upload_snap", e, request)
         
     @classmethod
-    def read_snaps(cls, user_id: int) -> list[dict[str, str | datetime]]:
+    def read_snaps(cls, user_id: int, request: Request) -> list[dict[str, str | datetime]]:
         try:
             response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             
@@ -117,10 +138,10 @@ class S3:
             return sorted(snaps, key=lambda x: x["created_at"], reverse=True)
         
         except ClientError as e:
-            cls._raise_client_operation_error("read_snaps", e)
+            cls._raise_client_operation_error("read_snaps", e, request)
         
     @classmethod
-    def read_newest_snap(cls, user_id: int) -> str:
+    def read_newest_snap(cls, user_id: int, request: Request) -> str:
         try:
             response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             
@@ -130,19 +151,19 @@ class S3:
             return f"https://{BUCKET_NAME}.s3.{env("AWS_S3_REGION")}.amazonaws.com/{response["Contents"][0]["Key"]}"
         
         except ClientError as e:
-            cls._raise_client_operation_error("read_newest_snap", e)
+            cls._raise_client_operation_error("read_newest_snap", e, request)
         
     @classmethod
-    def get_snap_count(cls, user_id: int) -> int:
+    def get_snap_count(cls, user_id: int, request: Request) -> int:
         try:
             response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             return response["KeyCount"]
         
         except ClientError as e:
-            cls._raise_client_operation_error("get_snap_count", e)
+            cls._raise_client_operation_error("get_snap_count", e, request)
             
     @classmethod
-    def get_snap_folder_count(cls, user_id: int) -> int:
+    def get_snap_folder_count(cls, user_id: int, request: Request) -> int:
         try:
             response = S3_CLIENT.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{user_id}/")
             
@@ -157,15 +178,16 @@ class S3:
             return count
         
         except ClientError as e:
-            cls._raise_client_operation_error("get_snap_folder_count", e)
+            cls._raise_client_operation_error("get_snap_folder_count", e, request)
             
 
     @classmethod
-    def delete_snap(cls, s3_key: str) -> None:
+    def delete_snap(cls, s3_key: str, request: Request) -> None:
         try:
             message = {
                 "operation": "s3.delete_snap",
                 "s3_key": s3_key,
+                "request": request,
             }
 
             kafka_producer.produce(
@@ -177,7 +199,7 @@ class S3:
             remaining_messages = kafka_producer.flush(timeout=15)
             
             if remaining_messages > 0:
-                cls._raise_kafka_message_delivery_failure("delete_snap", remaining_messages)
+                cls._raise_kafka_message_delivery_failure("delete_snap", remaining_messages, request)
             
             return
 
@@ -185,14 +207,15 @@ class S3:
             raise
 
         except Exception as e:
-            cls._raise_kafka_message_produce_failure("delete_snap", e)
+            cls._raise_kafka_message_produce_failure("delete_snap", e, request)
         
     @classmethod
-    def delete_all_snaps(cls, user_id: int) -> None:
+    def delete_all_snaps(cls, user_id: int, request: Request) -> None:
         try:
             message = {
                 "operation": "s3.delete_all_snaps",
                 "user_id": user_id,
+                "request": request,
             }
 
             kafka_producer.produce(
@@ -204,7 +227,7 @@ class S3:
             remaining_messages = kafka_producer.flush(timeout=15)
             
             if remaining_messages > 0:
-                cls._raise_kafka_message_delivery_failure("delete_all_snaps", remaining_messages)
+                cls._raise_kafka_message_delivery_failure("delete_all_snaps", remaining_messages, request)
             
             return
 
@@ -212,4 +235,4 @@ class S3:
             raise
 
         except Exception as e:
-            cls._raise_kafka_message_produce_failure("delete_all_snaps", e)
+            cls._raise_kafka_message_produce_failure("delete_all_snaps", e, request)
