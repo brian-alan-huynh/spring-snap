@@ -11,10 +11,10 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, EmailStr, Field, validator
 from fastapi_csrf_protect import CsrfProtect
 
-from backend.main import app, limiter
-from backend.infra.sessions import Redis
-from backend.infra.oauth import oauth
-from backend.utils.login import update_thumbnail, signup_or_login_oauth, redirect_and_set_cookie
+from config.limiter_config import limiter
+from infra.sessions import Redis
+from infra.oauth import oauth
+from utils.login import update_thumbnail, signup_or_login_oauth, redirect_and_set_cookie
 
 load_dotenv()
 env = os.getenv
@@ -83,9 +83,9 @@ class AuthError(Exception):
     "Exception for auth operations"
     pass
 
-def _raise_auth_operation_error(func_name: str, error: Exception) -> None:
+def _raise_auth_operation_error(func_name: str, error: Exception, request: Request) -> None:
     error_message = f"Failed to perform auth operation in {func_name}: {error}"
-    app.state.logger.log_error(error_message)
+    request.app.state.logger.log_error(error_message)
     raise AuthError(error_message) from error
 
 @router.get("/login/google")
@@ -95,7 +95,7 @@ async def login_google(request: Request):
         return await oauth.google.authorize_redirect(request, redirect_uri)
     
     except Exception as e:
-        _raise_auth_operation_error("login_google", e)
+        _raise_auth_operation_error("login_google", e, request)
     
 @router.get("/auth/google")
 async def google_auth(request: Request):
@@ -106,12 +106,12 @@ async def google_auth(request: Request):
         oauth_user_id = user.get("sub")
         first_name = user.get("given_name")
 
-        session_key = signup_or_login_oauth(first_name, "google", oauth_user_id)
+        session_key = signup_or_login_oauth(first_name, "google", oauth_user_id, request)
         
         return redirect_and_set_cookie(session_key, "google")
     
     except Exception as e:
-        _raise_auth_operation_error("google_auth", e)
+        _raise_auth_operation_error("google_auth", e, request)
 
 @router.get("/login/facebook")
 async def login_facebook(request: Request):
@@ -120,7 +120,7 @@ async def login_facebook(request: Request):
         return await oauth.facebook.authorize_redirect(request, redirect_uri)
     
     except Exception as e:
-        _raise_auth_operation_error("login_facebook", e)
+        _raise_auth_operation_error("login_facebook", e, request)
     
 @router.get("/auth/facebook")
 async def facebook_auth(request: Request):
@@ -132,12 +132,12 @@ async def facebook_auth(request: Request):
         oauth_user_id = user.get("id")
         first_name = user.get("first_name")
         
-        session_key = signup_or_login_oauth(first_name, "facebook", oauth_user_id)
+        session_key = signup_or_login_oauth(first_name, "facebook", oauth_user_id, request)
         
         return redirect_and_set_cookie(session_key, "facebook")
     
     except Exception as e:
-        _raise_auth_operation_error("facebook_auth", e)
+        _raise_auth_operation_error("facebook_auth", e, request)
     
 @router.get("/login/apple")
 async def login_apple(request: Request):
@@ -146,7 +146,7 @@ async def login_apple(request: Request):
         return await oauth.apple.authorize_redirect(request, redirect_uri)
     
     except Exception as e:
-        _raise_auth_operation_error("login_apple", e)
+        _raise_auth_operation_error("login_apple", e, request)
     
 @router.post("/auth/apple")
 async def apple_auth(request: Request):
@@ -159,12 +159,12 @@ async def apple_auth(request: Request):
         oauth_user_id = id_token.get("sub") if id_token else None
         first_name = json.loads(user_data).get("name", {}).get("firstName") if user_data else None
         
-        session_key = signup_or_login_oauth(first_name, "apple", oauth_user_id)
+        session_key = signup_or_login_oauth(first_name, "apple", oauth_user_id, request)
         
         return redirect_and_set_cookie(session_key, "apple")
     
     except Exception as e:
-        _raise_auth_operation_error("apple_auth", e)
+        _raise_auth_operation_error("apple_auth", e, request)
     
 @router.post("/request-otp")
 @limiter.limit("5/minute")
@@ -217,12 +217,12 @@ async def request_otp(
             server.login(env("OWNER_EMAIL"), env("SMTP_EMAIL_APP_PASS"))
             server.sendmail(env("OWNER_EMAIL"), email, msg.as_string())
             
-        Redis.add_otp(int(otp), email)
+        Redis.add_otp(request, int(otp), email, request)
             
         return Response(status_code=200)
 
     except Exception as e:
-        _raise_auth_operation_error("request_otp", e)
+        _raise_auth_operation_error("request_otp", e, request)
 
 @router.post("/verify-otp")
 @limiter.limit("10/minute")
@@ -237,7 +237,7 @@ async def verify_otp(
         email = creds.email
         user_otp = creds.user_otp
         
-        res = Redis.verify_otp(int(user_otp), email)
+        res = Redis.verify_otp(int(user_otp), email, request)
     
         if not res:
             return Response(status_code=401, content="Your code is incorrect! Please try again!")
@@ -245,7 +245,7 @@ async def verify_otp(
         return Response(status_code=200)
     
     except Exception as e:
-        _raise_auth_operation_error("verify_otp", e)
+        _raise_auth_operation_error("verify_otp", e, request)
     
 @router.post("/signup")
 @limiter.limit("5/minute")
@@ -262,14 +262,14 @@ async def signup(
         password = creds.password
         email = creds.email
         
-        user_id = app.state.rds.create_user(first_name, username, password, email)
-        app.state.rds.create_user_preference(user_id, "light")
-        session_key = Redis.add_new_session(user_id)
+        user_id = request.app.state.rds.create_user(request, first_name, username, password, email)
+        request.app.state.rds.create_user_preference(user_id, "light", request)
+        session_key = Redis.add_new_session(user_id, request)
 
         return redirect_and_set_cookie(session_key)
     
     except Exception as e:
-        _raise_auth_operation_error("signup", e)
+        _raise_auth_operation_error("signup", e, request)
 
 @router.post("/validate", response_model=ValidateResponse)
 @limiter.limit("10/minute")
@@ -284,7 +284,7 @@ async def validate(
         username_or_email = creds.username_or_email
         password = creds.password
         
-        res = app.state.rds.check_normal_login_creds(username_or_email, password)
+        res = request.app.state.rds.check_normal_login_creds(username_or_email, password, request)
             
         if not res:
             return Response(status_code=401, content="Incorrect username or password")
@@ -292,7 +292,7 @@ async def validate(
         return res
         
     except Exception as e:
-        _raise_auth_operation_error("validate", e)
+        _raise_auth_operation_error("validate", e, request)
     
 @router.post("/login")
 @limiter.limit("5/minute")
@@ -307,14 +307,14 @@ async def login(
         username_or_email = creds.username_or_email
         password = creds.password
         
-        user_id = app.state.rds.fetch_normal_user(username_or_email, password)
-        session_key = Redis.add_new_session(user_id)
-        update_thumbnail(user_id, session_key)
+        user_id = request.app.state.rds.fetch_normal_user(username_or_email, password, request)
+        session_key = Redis.add_new_session(user_id, request)
+        update_thumbnail(user_id, session_key, request)
             
         return redirect_and_set_cookie(session_key)
 
     except Exception as e:
-        _raise_auth_operation_error("login", e)
+        _raise_auth_operation_error("login", e, request)
     
 @router.post("/logout")
 @limiter.limit("1/minute")
@@ -328,7 +328,7 @@ async def logout(
     try:
         session_key = request.cookies.get("session_key")
         
-        Redis.delete_session(session_key)
+        Redis.delete_session(session_key, request)
         response.delete_cookie("session_key")
         res = JSONResponse(content={ "detail": "success" })
         csrf_protect.unset_csrf_cookie(res)
@@ -336,4 +336,4 @@ async def logout(
         return RedirectResponse(url="http://localhost:3000/login", status_code=302)
     
     except Exception as e:
-        _raise_auth_operation_error("logout", e)
+        _raise_auth_operation_error("logout", e, request)
