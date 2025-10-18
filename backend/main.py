@@ -7,24 +7,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, Field
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from fastapi_csrf_protect import CsrfProtect
 
 from routers import auth, snap, user
 from config.app_settings_config import Settings
 from config.logging_config import Logging
+from config.limiter_config import limiter
 from infra.db import RDS
 from infra.sessions import Redis
 from infra.messaging import run_consumer
 
 settings = Settings()
-
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[settings.rate_slowapi_limiter],
-)
 
 # Pydantic models
 class RootWithThumbnail(BaseModel):
