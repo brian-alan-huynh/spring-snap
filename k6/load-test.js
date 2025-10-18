@@ -3,8 +3,8 @@ import { check, sleep, group } from "k6";
 import { Trend, Rate, Counter } from "k6/metrics";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.2/index.js";
 
-const BASE_URL = "https://api.springsnap.com";
-const WEB_URL = "https://springsnap.com";
+const WEB_URL = "https://curbystorage.com";
+const API_URL = "https://api.curbystorage.com";
 
 const errorRate = new Rate("error_rate");
 const apiLatency = new Trend("api_latency_ms");
@@ -72,7 +72,7 @@ const options = {
 };
 
 const setup = () => {
-    const res = http.get(`${BASE_URL}/health`);
+    const res = http.get(`${API_URL}/health`);
 
     if (res.status !== 200) {
         throw new Error(`Health check failed with status ${res.status}. Aborting the testing now`);
@@ -88,7 +88,7 @@ export default () => {
 };
 
 const mainTestFlow = () => {
-    group("1. Visit springsnap.com & load its assets", () => {
+    group("1. Visit curbystorage.com & load its assets", () => {
         loadWebApp();
     });
 
@@ -142,10 +142,10 @@ const authenticateUser = () => {
     const first_name = "Hudson";
     const username = `testuser_${__VU}_${__ITER}`;
     const password = "Password$123!";
-    const email = "hudson@springsnap.com"
+    const email = "hudson@curbystorage.com"
 
     const registerRes = http.post(
-        `${BASE_URL}/api/v1/auth/signup`,
+        `${API_URL}/api/v1/auth/signup`,
         JSON.stringify({ first_name, username, password, email }), {
             tags: { name: "API-Register" },
             headers: {
@@ -167,7 +167,7 @@ const authenticateUser = () => {
         sleep(1);
 
         const loginRes = http.post(
-            `${BASE_URL}/api/v1/auth/login`,
+            `${API_URL}/api/v1/auth/login`,
             JSON.stringify({ username, password }), {
                 tags: { name: "API-Login" },
                 headers: {
@@ -191,7 +191,7 @@ const browseCoreApi = () => {
     const endpoints = ["/api/v1/snap/all", "/api/v1/user/details", "/health"];
     
     for (const endpoint of endpoints) {
-        const res = http.get(`${BASE_URL}${endpoint}`, {
+        const res = http.get(`${API_URL}${endpoint}`, {
             tags: { name: `API-Get-${endpoint}` },
             headers: { "Accept": "application/json" },
         });
@@ -216,7 +216,7 @@ const fileOperations = () => {
         img_file: http.file(fileBytes, "test-image.png", "image/png"),
     };
 
-    const uploadRes = http.post(`${BASE_URL}/api/v1/snap/upload`, data, {
+    const uploadRes = http.post(`${API_URL}/api/v1/snap/upload`, data, {
         tags: { name: "API-FileUpload" },
     });
 
