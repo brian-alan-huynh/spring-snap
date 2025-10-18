@@ -108,16 +108,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/", response_model=RootResponse)
 @limiter.limit("40/minute")
-async def root(request: Request, csrf_protect: CsrfProtect = Depends()):
-    await csrf_protect.validate_csrf(request)
-    
+async def root(request: Request):
     try:
         session_key = request.cookies.get("session_key")
         
         if not session_key:
             return RedirectResponse(url="http://localhost:3000/login", status_code=302)
         
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         
         if not session:
             return RedirectResponse(url="http://localhost:3000/login", status_code=302)
