@@ -9,7 +9,7 @@ class YOLOv11Error(Exception):
     "Exception for YOLOv11 operations"
     pass
 
-def yolov11_error_handler(request: Request, error: Exception = None) -> None:
+def yolov11_error_handler(error: Exception | None, request: Request) -> None:
     if error:
         error_message = f"Failed to perform YOLOv11 detection in yolov11_detect_file_objects: {error}"
         request.app.state.logger.log_error(error_message)
@@ -45,7 +45,7 @@ async def yolov11_detect_file_objects(file: UploadFile, request: Request) -> lis
         )
         
         if res.status_code != 200:
-            yolov11_error_handler(request)
+            yolov11_error_handler(None, request)
         
         data = res.json()
         
@@ -60,4 +60,4 @@ async def yolov11_detect_file_objects(file: UploadFile, request: Request) -> lis
         raise
     
     except Exception as e:
-        yolov11_error_handler(request, e)
+        yolov11_error_handler(e, request)
