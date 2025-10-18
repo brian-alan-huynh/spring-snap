@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, event
 from pymongo import MongoClient
 
-from backend.main import app
-
 load_dotenv()
 env = os.getenv
 
@@ -41,7 +39,6 @@ def generate_token():
     
     except Exception as e:
         error_message = f"Failed to generate RDS auth token: {e}"
-        app.state.logger.log_error(error_message)
         raise Exception(error_message) from e
 
 connection_url = (
