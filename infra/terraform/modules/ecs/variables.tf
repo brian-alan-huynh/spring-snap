@@ -33,6 +33,11 @@ variable "environment" {
   type        = string
 }
 
+variable "frontend_domain_name" {
+  description = "Production frontend domain name"
+  type        = string
+}
+
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket"
   type        = string

@@ -328,6 +328,7 @@ module "ecs" {
   ecr_repository_url_frontend = module.ecr.repository_url_frontend
 
   environment                = var.environment
+  frontend_domain_name       = var.frontend_domain_name
   s3_bucket_name             = module.s3.main_bucket_name
   kafka_bootstrap_servers    = module.confluent_kafka.bootstrap_servers
   mongodb_db_name            = var.mongodb_db_name

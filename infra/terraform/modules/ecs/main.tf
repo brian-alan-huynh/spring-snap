@@ -81,6 +81,10 @@ resource "aws_ecs_task_definition" "backend" {
           value = var.environment
         },
         {
+          name  = "FRONTEND_DOMAIN_NAME"
+          value = var.frontend_domain_name
+        },
+        {
           name  = "AWS_REGION"
           value = var.region
         },
