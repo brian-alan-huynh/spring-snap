@@ -113,26 +113,6 @@ variable "google_client_secret" {
   type        = string
 }
 
-variable "facebook_client_id" {
-  description = "Facebook client ID"
-  type        = string
-}
-
-variable "facebook_client_secret" {
-  description = "Facebook client secret"
-  type        = string
-}
-
-variable "apple_client_id" {
-  description = "Apple client ID"
-  type        = string
-}
-
-variable "apple_client_secret" {
-  description = "Apple client secret"
-  type        = string
-}
-
 variable "owner_email" {
   description = "Owner email address"
   type        = string

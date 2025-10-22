@@ -149,30 +149,6 @@ variable "google_client_secret" {
   sensitive   = true
 }
 
-variable "facebook_client_id" {
-  description = "Facebook client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "facebook_client_secret" {
-  description = "Facebook client secret"
-  type        = string
-  sensitive   = true
-}
-
-variable "apple_client_id" {
-  description = "Apple client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "apple_client_secret" {
-  description = "Apple client secret"
-  type        = string
-  sensitive   = true
-}
-
 variable "mongodb_db_collection_name" {
   description = "MongoDB Atlas database collection name"
   type        = string

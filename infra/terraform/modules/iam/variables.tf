@@ -64,30 +64,6 @@ variable "google_client_secret_secret_arn" {
   sensitive   = true
 }
 
-variable "facebook_client_id_secret_arn" {
-  description = "Facebook client ID secret ARN"
-  type        = string
-  sensitive   = true
-}
-
-variable "facebook_client_secret_secret_arn" {
-  description = "Facebook client secret secret ARN"
-  type        = string
-  sensitive   = true
-}
-
-variable "apple_client_id_secret_arn" {
-  description = "Apple client ID secret ARN"
-  type        = string
-  sensitive   = true
-}
-
-variable "apple_client_secret_secret_arn" {
-  description = "Apple client secret secret ARN"
-  type        = string
-  sensitive   = true
-}
-
 variable "owner_email_secret_arn" {
   description = "Owner email secret ARN"
   type        = string

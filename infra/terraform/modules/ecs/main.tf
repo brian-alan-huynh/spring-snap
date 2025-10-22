@@ -144,22 +144,6 @@ resource "aws_ecs_task_definition" "backend" {
           valueFrom = aws_secretsmanager_secret.google_client_secret.arn
         },
         {
-          name      = "FACEBOOK_CLIENT_ID"
-          valueFrom = aws_secretsmanager_secret.facebook_client_id.arn
-        },
-        {
-          name      = "FACEBOOK_CLIENT_SECRET"
-          valueFrom = aws_secretsmanager_secret.facebook_client_secret.arn
-        },
-        {
-          name      = "APPLE_CLIENT_ID"
-          valueFrom = aws_secretsmanager_secret.apple_client_id.arn
-        },
-        {
-          name      = "APPLE_CLIENT_SECRET"
-          valueFrom = aws_secretsmanager_secret.apple_client_secret.arn
-        },
-        {
           name      = "OWNER_EMAIL"
           valueFrom = aws_secretsmanager_secret.owner_email.arn
         },
@@ -414,43 +398,6 @@ resource "aws_secretsmanager_secret_version" "google_client_secret" {
   secret_id     = aws_secretsmanager_secret.google_client_secret.id
   secret_string = var.google_client_secret
 }
-
-resource "aws_secretsmanager_secret" "facebook_client_id" {
-  name = "${var.name_prefix}-facebook-client-id-secret"
-}
-
-resource "aws_secretsmanager_secret_version" "facebook_client_id" {
-  secret_id     = aws_secretsmanager_secret.facebook_client_id.id
-  secret_string = var.facebook_client_id
-}
-
-resource "aws_secretsmanager_secret" "facebook_client_secret" {
-  name = "${var.name_prefix}-facebook-client-secret"
-}
-
-resource "aws_secretsmanager_secret_version" "facebook_client_secret" {
-  secret_id     = aws_secretsmanager_secret.facebook_client_secret.id
-  secret_string = var.facebook_client_secret
-}
-
-resource "aws_secretsmanager_secret" "apple_client_id" {
-  name = "${var.name_prefix}-apple-client-id-secret"
-}
-
-resource "aws_secretsmanager_secret_version" "apple_client_id" {
-  secret_id     = aws_secretsmanager_secret.apple_client_id.id
-  secret_string = var.apple_client_id
-}
-
-resource "aws_secretsmanager_secret" "apple_client_secret" {
-  name = "${var.name_prefix}-apple-client-secret"
-}
-
-resource "aws_secretsmanager_secret_version" "apple_client_secret" {
-  secret_id     = aws_secretsmanager_secret.apple_client_secret.id
-  secret_string = var.apple_client_secret
-}
-
 resource "aws_secretsmanager_secret" "owner_email" {
   name = "${var.name_prefix}-owner-email-secret"
 }

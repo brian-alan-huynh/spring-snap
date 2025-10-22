@@ -337,23 +337,19 @@ module "ecs" {
   smtp_server                = var.smtp_server
   smtp_server_port           = var.smtp_server_port
 
-  rds_secret_arn         = module.rds.secret_arn
-  redis_secret_arn       = module.redis.secret_arn
-  kafka_secret_arn       = module.confluent_kafka.secret_arn
-  mongodb_secret_arn     = module.mongodb.secret_arn
-  google_client_id       = var.google_client_id
-  google_client_secret   = var.google_client_secret
-  facebook_client_id     = var.facebook_client_id
-  facebook_client_secret = var.facebook_client_secret
-  apple_client_id        = var.apple_client_id
-  apple_client_secret    = var.apple_client_secret
-  owner_email            = var.owner_email
-  roboflow_api_key       = var.roboflow_api_key
-  smtp_email_app_pass    = var.smtp_email_app_pass
-  grafana_loki_url       = var.grafana_loki_url
-  grafana_loki_username  = var.grafana_loki_username
-  grafana_loki_password  = var.grafana_loki_password
-  app_csrf_secret_key    = var.app_csrf_secret_key
+  rds_secret_arn        = module.rds.secret_arn
+  redis_secret_arn      = module.redis.secret_arn
+  kafka_secret_arn      = module.confluent_kafka.secret_arn
+  mongodb_secret_arn    = module.mongodb.secret_arn
+  google_client_id      = var.google_client_id
+  google_client_secret  = var.google_client_secret
+  owner_email           = var.owner_email
+  roboflow_api_key      = var.roboflow_api_key
+  smtp_email_app_pass   = var.smtp_email_app_pass
+  grafana_loki_url      = var.grafana_loki_url
+  grafana_loki_username = var.grafana_loki_username
+  grafana_loki_password = var.grafana_loki_password
+  app_csrf_secret_key   = var.app_csrf_secret_key
 
   region     = local.region
   account_id = local.account_id
@@ -516,23 +512,19 @@ module "iam" {
   rds_db_username = var.rds_db_username
   rds_resource_id = module.rds.resource_id
 
-  rds_secret_arn                    = module.rds.secret_arn
-  redis_secret_arn                  = module.redis.secret_arn
-  kafka_secret_arn                  = module.confluent_kafka.secret_arn
-  mongodb_secret_arn                = module.mongodb.secret_arn
-  google_client_id_secret_arn       = module.ecs.google_client_id_secret_arn
-  google_client_secret_secret_arn   = module.ecs.google_client_secret_secret_arn
-  facebook_client_id_secret_arn     = module.ecs.facebook_client_id_secret_arn
-  facebook_client_secret_secret_arn = module.ecs.facebook_client_secret_secret_arn
-  apple_client_id_secret_arn        = module.ecs.apple_client_id_secret_arn
-  apple_client_secret_secret_arn    = module.ecs.apple_client_secret_secret_arn
-  owner_email_secret_arn            = module.ecs.owner_email_secret_arn
-  roboflow_api_key_secret_arn       = module.ecs.roboflow_api_key_secret_arn
-  smtp_email_app_pass_secret_arn    = module.ecs.smtp_email_app_pass_secret_arn
-  grafana_loki_url_secret_arn       = module.ecs.grafana_loki_url_secret_arn
-  grafana_loki_username_secret_arn  = module.ecs.grafana_loki_username_secret_arn
-  grafana_loki_password_secret_arn  = module.ecs.grafana_loki_password_secret_arn
-  app_csrf_secret_key_secret_arn    = module.ecs.app_csrf_secret_key_secret_arn
+  rds_secret_arn                   = module.rds.secret_arn
+  redis_secret_arn                 = module.redis.secret_arn
+  kafka_secret_arn                 = module.confluent_kafka.secret_arn
+  mongodb_secret_arn               = module.mongodb.secret_arn
+  google_client_id_secret_arn      = module.ecs.google_client_id_secret_arn
+  google_client_secret_secret_arn  = module.ecs.google_client_secret_secret_arn
+  owner_email_secret_arn           = module.ecs.owner_email_secret_arn
+  roboflow_api_key_secret_arn      = module.ecs.roboflow_api_key_secret_arn
+  smtp_email_app_pass_secret_arn   = module.ecs.smtp_email_app_pass_secret_arn
+  grafana_loki_url_secret_arn      = module.ecs.grafana_loki_url_secret_arn
+  grafana_loki_username_secret_arn = module.ecs.grafana_loki_username_secret_arn
+  grafana_loki_password_secret_arn = module.ecs.grafana_loki_password_secret_arn
+  app_csrf_secret_key_secret_arn   = module.ecs.app_csrf_secret_key_secret_arn
 
   tags = local.common_tags
 }
