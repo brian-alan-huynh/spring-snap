@@ -1,3 +1,4 @@
+import os
 import threading
 from contextlib import asynccontextmanager
 
@@ -10,6 +11,7 @@ from pydantic import BaseModel, Field
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from fastapi_csrf_protect import CsrfProtect
+from dotenv import load_dotenv
 
 from routers import auth, snap, user
 from config.app_settings_config import Settings
@@ -18,6 +20,9 @@ from config.limiter_config import limiter
 from infra.db import RDS
 from infra.sessions import Redis
 from infra.messaging import run_consumer
+
+load_dotenv()
+env = os.getenv
 
 settings = Settings()
 
@@ -113,12 +118,12 @@ async def root(request: Request):
         session_key = request.cookies.get("session_key")
         
         if not session_key:
-            return RedirectResponse(url="http://localhost:3000/login", status_code=302)
+            return RedirectResponse(url=f"{env('FRONTEND_DOMAIN_NAME')}/login", status_code=302)
         
         session = Redis.get_session(session_key, request)
         
         if not session:
-            return RedirectResponse(url="http://localhost:3000/login", status_code=302)
+            return RedirectResponse(url=f"{env('FRONTEND_DOMAIN_NAME')}/login", status_code=302)
         
         first_name = app.state.rds.read_user(session["user_id"])["first_name"].title()
         thumbnail_img_url = session["thumbnail_img_url"]

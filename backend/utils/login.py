@@ -1,7 +1,13 @@
+import os
+
 from fastapi import Request
+from dotenv import load_dotenv
 
 from infra.sessions import Redis
 from infra.storage import S3
+
+load_dotenv()
+env = os.getenv
 
 class OAuthError(Exception):
     "Exception for OAuth operations"
@@ -55,7 +61,7 @@ def signup_or_login_oauth(
         raise OAuthError(error_message) from e
     
 def redirect_and_set_cookie(session_key: str, oauth_provider: str | None = None) -> RedirectResponse:
-    response = RedirectResponse(url="http://localhost:3000/home", status_code=302)
+    response = RedirectResponse(url=f"{env("FRONTEND_DOMAIN_NAME")}/home", status_code=302)
     
     response.set_cookie(
         key="session_key",

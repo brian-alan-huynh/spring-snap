@@ -333,7 +333,7 @@ async def logout(
         res = JSONResponse(content={ "detail": "success" })
         csrf_protect.unset_csrf_cookie(res)
         
-        return RedirectResponse(url="http://localhost:3000/login", status_code=302)
+        return RedirectResponse(url=f"{env("FRONTEND_DOMAIN_NAME")}/login", status_code=302)
     
     except Exception as e:
         _raise_auth_operation_error("logout", e, request)
