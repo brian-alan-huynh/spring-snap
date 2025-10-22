@@ -60,7 +60,7 @@ def signup_or_login_oauth(
         request.app.state.logger.log_error(error_message)
         raise OAuthError(error_message) from e
     
-def redirect_and_set_cookie(session_key: str, oauth_provider: str | None = None) -> RedirectResponse:
+def redirect_and_set_cookie(session_key: str) -> RedirectResponse:
     response = RedirectResponse(url=f"{env("FRONTEND_DOMAIN_NAME")}/home", status_code=302)
     
     response.set_cookie(
@@ -71,15 +71,5 @@ def redirect_and_set_cookie(session_key: str, oauth_provider: str | None = None)
         same_site="lax",
         max_age=60 * 60 * 24 * 7 * 4 * 6,
     )
-    
-    if oauth_provider:
-        response.set_cookie(
-            key="recently_used_oauth_provider",
-            value=oauth_provider,
-            httponly=True,
-            secure=True,
-            same_site="lax",
-            max_age=60 * 60 * 24 * 7 * 4 * 6 * 2,
-        )
     
     return response

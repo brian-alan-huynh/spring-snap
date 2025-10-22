@@ -108,64 +108,11 @@ async def google_auth(request: Request):
 
         session_key = signup_or_login_oauth(first_name, "google", oauth_user_id, request)
         
-        return redirect_and_set_cookie(session_key, "google")
+        return redirect_and_set_cookie(session_key)
     
     except Exception as e:
         _raise_auth_operation_error("google_auth", e, request)
 
-@router.get("/login/facebook")
-async def login_facebook(request: Request):
-    try:
-        redirect_uri = request.url_for("facebook_auth")
-        return await oauth.facebook.authorize_redirect(request, redirect_uri)
-    
-    except Exception as e:
-        _raise_auth_operation_error("login_facebook", e, request)
-    
-@router.get("/auth/facebook")
-async def facebook_auth(request: Request):
-    try:
-        token = await oauth.facebook.authorize_access_token(request)
-        resp = await oauth.facebook.get("me?fields=id,first_name,email", token=token)
-        user = await resp.json()
-        
-        oauth_user_id = user.get("id")
-        first_name = user.get("first_name")
-        
-        session_key = signup_or_login_oauth(first_name, "facebook", oauth_user_id, request)
-        
-        return redirect_and_set_cookie(session_key, "facebook")
-    
-    except Exception as e:
-        _raise_auth_operation_error("facebook_auth", e, request)
-    
-@router.get("/login/apple")
-async def login_apple(request: Request):
-    try:
-        redirect_uri = request.url_for("apple_auth")
-        return await oauth.apple.authorize_redirect(request, redirect_uri)
-    
-    except Exception as e:
-        _raise_auth_operation_error("login_apple", e, request)
-    
-@router.post("/auth/apple")
-async def apple_auth(request: Request):
-    try:
-        token = await oauth.apple.authorize_access_token(request)
-        id_token = token.get("id_token")
-        form_data = await request.form()
-        user_data = await form_data.get("user")
-        
-        oauth_user_id = id_token.get("sub") if id_token else None
-        first_name = json.loads(user_data).get("name", {}).get("firstName") if user_data else None
-        
-        session_key = signup_or_login_oauth(first_name, "apple", oauth_user_id, request)
-        
-        return redirect_and_set_cookie(session_key, "apple")
-    
-    except Exception as e:
-        _raise_auth_operation_error("apple_auth", e, request)
-    
 @router.post("/request-otp")
 @limiter.limit("5/minute")
 async def request_otp(
