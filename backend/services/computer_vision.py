@@ -31,7 +31,7 @@ async def yolov11_detect_file_objects(file: UploadFile, request: Request) -> lis
         res = req.post(
             f"https://detect.roboflow.com/{env("ROBOFLOW_MODEL_PATH")}",
             headers={
-                "User-Agent": f"FiveSnaps/0.1.0 (https://fivesnaps.com; {env("EMAIL")})",
+                "User-Agent": f"CurbyStorage/0.1.0 (https://curbystorage.com; {env("EMAIL")})",
                 "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Accept-Language": "en-US",
