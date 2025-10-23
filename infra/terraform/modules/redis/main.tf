@@ -1,3 +1,7 @@
+locals {
+  public_endpoint = rediscloud_essentials_database.main.public_endpoint
+}
+
 resource "rediscloud_essentials_subscription" "main" {
   name              = "${var.name_prefix}-free-subscription"
   plan_id           = var.plan_id
@@ -23,8 +27,8 @@ resource "aws_secretsmanager_secret_version" "main" {
   secret_id = aws_secretsmanager_secret.main.id
 
   secret_string = jsonencode({
-    host     = element(split(":", element(split("@", rediscloud_essentials_database.main.public_endpoint), 1)), 0)
-    port     = element(split(":", element(split("@", rediscloud_essentials_database.main.public_endpoint), 1)), 1)
+    host     = split(":", split("@", local.public_endpoint)[1])[0]
+    port     = split(":", split("@", local.public_endpoint)[1])[1]
     password = rediscloud_essentials_database.main.password
   })
 }
