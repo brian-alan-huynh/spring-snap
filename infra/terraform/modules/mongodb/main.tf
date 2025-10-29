@@ -17,7 +17,7 @@ resource "mongodbatlas_cluster" "main" {
   project_id                  = mongodbatlas_project.main.id
   name                        = "${var.name_prefix}-mongodb-cluster"
   provider_name               = "TENANT"
-  provider_region_name        = "US_EAST_1"
+  provider_region_name        = "US_EAST_2"
   provider_instance_size_name = "M0"
   backing_provider_name       = "AWS"
 }
