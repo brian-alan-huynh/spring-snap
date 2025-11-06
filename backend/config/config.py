@@ -11,7 +11,18 @@ load_dotenv()
 env = os.getenv
 
 REGION = env("AWS_REGION")
-secretsmanager_client = boto3.client("secretsmanager", region_name=REGION)
+
+if env("ENVIRONMENT") == "dev":
+    secretsmanager_client = boto3.client(
+        "secretsmanager", 
+        region_name=REGION,
+        endpoint_url="http://localhost:4566",
+    )
+else:
+    secretsmanager_client = boto3.client(
+        "secretsmanager", 
+        region_name=REGION,
+    )
 
 def get_secret_string(secret_arn):
     response = secretsmanager_client.get_secret_value(SecretId=secret_arn)
