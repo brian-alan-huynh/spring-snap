@@ -1,25 +1,19 @@
-*.pyc
-__pycache__/
-.venv/
-venv/
-env/
-.venv
-.vscode/
-node_modules/
-*.iml
-*.ipr
-*.iws
-dist/
-build/
-*.egg-info/
-.coverage
-.pytest_cache/
-.python-version
-.env
-.env.local
-.env.*.local
+# Editor directories and files
+*.vscode/*
+*.idea
+*.DS_Store
+*.suo
+/build/
+/uploads/
+
+# Logs and reports
+*.xml
+reports/
 *.log
 logs/
-/uploads/
-build/
-.DS_Store
+
+# Python specific
+*.egg-info/
+*.coverage
+*.pytest_cache/
+*.python-version

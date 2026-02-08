@@ -4,11 +4,11 @@ from fastapi import APIRouter, Request, Response, Depends, UploadFile
 from pydantic import BaseModel, Field, validator
 from fastapi_csrf_protect import CsrfProtect
 
-from backend.main import app, limiter
-from backend.infra.db_tagging import MongoDB
-from backend.infra.storage import S3
-from backend.infra.sessions import Redis
-from backend.services.computer_vision import yolov11_detect_img_objects
+from config.limiter_config import limiter
+from infra.db_tagging import MongoDB
+from infra.storage import S3
+from infra.sessions import Redis
+from services.computer_vision import yolov11_detect_file_objects
 
 router = APIRouter(
     prefix="/snap",
@@ -18,10 +18,11 @@ router = APIRouter(
 
 # Pydantic models
 class SnapData(BaseModel):
-    img_url: str
+    file_url: str
     created_at: str
     file_size: int
     s3_key: str
+    is_in_folder: bool
     tags: list[str]
     caption: str
 
@@ -41,33 +42,32 @@ class SnapError(Exception):
     "Exception for snap operations"
     pass
     
-def _raise_snap_operation_error(func_name: str, error: Exception) -> None:
+def _raise_snap_operation_error(func_name: str, error: Exception, request: Request) -> None:
     error_message = f"Failed to perform snap operation in {func_name}: {error}"
-    app.state.logger.log_error(error_message)
+    request.app.state.logger.log_error(error_message)
     raise SnapError(error_message) from error
 
 @router.get("/all", response_model=list[SnapData])
 @limiter.limit("30/minute")
-async def all(request: Request, csrf_protect: CsrfProtect = Depends()):
-    await csrf_protect.validate_csrf(request)
-    
+async def all(request: Request):
     try:
         session_key = request.cookies.get("session_key")
         
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         user_id = session["user_id"]
         
-        snaps = S3.read_snaps(user_id)
-        img_tags_and_captions = MongoDB.read_img_tags_and_captions(user_id)
+        snaps = S3.read_snaps(user_id, request)
+        snaps_tags_and_captions = MongoDB.read_file_tags_and_captions(user_id, request)
         
         snaps_with_tags_and_captions = []
         
-        for snap, tags_and_caption in zip(snaps, img_tags_and_captions):
+        for snap, tags_and_caption in zip(snaps, snaps_tags_and_captions):
             snaps_with_tags_and_captions.append({
-                "img_url": snap["img_url"],
+                "file_url": snap["file_url"],
                 "created_at": snap["created_at"],
                 "file_size": snap["file_size"],
                 "s3_key": snap["s3_key"],
+                "is_in_folder": snap["is_in_folder"],
                 "tags": tags_and_caption["tags"],
                 "caption": tags_and_caption["caption"],
             })
@@ -75,13 +75,14 @@ async def all(request: Request, csrf_protect: CsrfProtect = Depends()):
         return snaps_with_tags_and_captions
     
     except Exception as e:
-        _raise_snap_operation_error("all", e)
+        _raise_snap_operation_error("all", e, request)
 
 @router.post("/upload")
 @limiter.limit("325/minute")
 async def upload(
     request: Request,
-    img_file: UploadFile,
+    file: UploadFile,
+    folder_name: str | None = None,
     csrf_protect: CsrfProtect = Depends(),
 ):
     await csrf_protect.validate_csrf(request)
@@ -89,18 +90,18 @@ async def upload(
     try:
         session_key = request.cookies.get("session_key")
         
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         user_id = session["user_id"]
         
-        img_url, s3_key = await S3.upload_snap(user_id, img_file)
-        Redis.place_thumbnail_img_url(session_key, img_url)
-        tags = await yolov11_detect_img_objects(img_file)
-        MongoDB.add_img_tags(user_id, s3_key, tags)
+        file_url, s3_key = await S3.upload_snap(user_id, file, folder_name, request)
+        Redis.place_thumbnail_file_url(session_key, file_url, request)
+        tags = await yolov11_detect_file_objects(file, request)
+        MongoDB.add_file_tags(user_id, s3_key, tags, request)
         
         return Response(status_code=200)
         
     except Exception as e:
-        _raise_snap_operation_error("upload", e)
+        _raise_snap_operation_error("upload", e, request)
 
 @router.post("/caption")
 @router.put("/caption")
@@ -116,12 +117,12 @@ async def caption(
         s3_key = key_and_caption.s3_key
         caption = key_and_caption.caption
         
-        MongoDB.write_img_caption(s3_key, caption)
+        MongoDB.write_file_caption(s3_key, caption, request)
         
         return Response(status_code=200)
         
     except Exception as e:
-        _raise_snap_operation_error("caption", e)
+        _raise_snap_operation_error("caption", e, request)
     
 @router.delete("/single")
 async def delete_single(
@@ -132,10 +133,10 @@ async def delete_single(
     await csrf_protect.validate_csrf(request)
     
     try:
-        S3.delete_snap(s3_key)
-        MongoDB.delete_img_tags_and_captions(s3_key)
+        S3.delete_snap(s3_key, request)
+        MongoDB.delete_file_tags_and_captions(s3_key, request)
         
         return Response(status_code=200)
     
     except Exception as e:
-        _raise_snap_operation_error("delete_single", e)
+        _raise_snap_operation_error("delete_single", e, request)

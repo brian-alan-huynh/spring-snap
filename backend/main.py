@@ -1,3 +1,4 @@
+import os
 import threading
 from contextlib import asynccontextmanager
 
@@ -7,24 +8,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, Field
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from fastapi_csrf_protect import CsrfProtect
+from dotenv import load_dotenv
 
 from routers import auth, snap, user
 from config.app_settings_config import Settings
 from config.logging_config import Logging
+from config.limiter_config import limiter
 from infra.db import RDS
 from infra.sessions import Redis
 from infra.messaging import run_consumer
 
-settings = Settings()
+load_dotenv()
+env = os.getenv
 
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[settings.rate_slowapi_limiter],
-)
+settings = Settings()
 
 # Pydantic models
 class RootWithThumbnail(BaseModel):
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
     logging = Logging()
     
     app.state.rds = rds
-    app.state.logging = logging
+    app.state.logger = logging
     
     stop_event = threading.Event()
     thread = threading.Thread(target=run_consumer, args=(stop_event,), daemon=True)
@@ -99,7 +99,7 @@ async def security_headers(request: Request, call_next):
     res.headers["X-Frame-Options"] = "DENY"
     res.headers["Referrer-Policy"] = "no-referrer"
 
-    if settings.env == "prod":
+    if settings.environment == "prod":
         res.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
     return res
@@ -113,19 +113,17 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/", response_model=RootResponse)
 @limiter.limit("40/minute")
-async def root(request: Request, csrf_protect: CsrfProtect = Depends()):
-    await csrf_protect.validate_csrf(request)
-    
+async def root(request: Request):
     try:
         session_key = request.cookies.get("session_key")
         
         if not session_key:
-            return RedirectResponse(url="http://localhost:3000/login", status_code=302)
+            return RedirectResponse(url=f"{env('FRONTEND_DOMAIN_NAME')}/login", status_code=302)
         
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         
         if not session:
-            return RedirectResponse(url="http://localhost:3000/login", status_code=302)
+            return RedirectResponse(url=f"{env('FRONTEND_DOMAIN_NAME')}/login", status_code=302)
         
         first_name = app.state.rds.read_user(session["user_id"])["first_name"].title()
         thumbnail_img_url = session["thumbnail_img_url"]
@@ -183,4 +181,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True,
+        reload_delay=0.5,
     )

@@ -1,0 +1,197 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: docker/Dockerfile.dev
+    working_dir: /backend
+    container_name: curby-backend-dev
+    ports:
+      - "8000:8000"
+    environment:
+      # System
+      ENVIRONMENT: dev
+      AWS_REGION: us-east-2
+      PYTHONUNBUFFERED: 1
+      WATCHFILES_FORCE_POLLING: true
+      # Environment variables
+      AWS_RDS_SECRET_ARN: arn:aws:secretsmanager:us-east-1:000000000000:secret:dev-rds-secret
+      REDIS_SECRET_ARN: arn:aws:secretsmanager:us-east-1:000000000000:secret:dev-redis-secret
+      MONGODB_SECRET_ARN: arn:aws:secretsmanager:us-east-1:000000000000:secret:dev-mongodb-secret
+      KAFKA_SECRET_ARN: arn:aws:secretsmanager:us-east-1:000000000000:secret:dev-kafka-secret
+      AWS_S3_BUCKET_NAME: curby-dev-snaps
+      MONGODB_DB_NAME: snap_tags_and_captions
+      MONGODB_DB_COLLECTION_NAME: tags_and_captions
+      KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+      APP_CSRF_SECRET_KEY: dev-csrf-secret-key
+      # LocalStack
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_ENDPOINT_URL: http://localstack:4566
+    volumes:
+      - ../backend:/backend
+      - backend-venv:/backend/venv
+    env_file:
+      - ../backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    networks:
+      - curby-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: docker/Dockerfile.dev
+    working_dir: /frontend
+    container_name: curby-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      # System
+      NODE_ENV: development
+      VITE_API_BASE_URL: http://localhost:8000
+      VITE_ENVIRONMENT: dev
+    volumes:
+      - ../frontend:/frontend
+      - frontend-node-modules:/frontend/node_modules
+    depends_on:
+      - backend
+    networks:
+      - curby-network
+    command: pnpm run dev
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+  
+  postgres:
+    image: postgres:18-alpine
+    container_name: curby-postgres-dev
+    environment:
+      POSTGRES_DB: curby
+      POSTGRES_USER: curby_user
+      POSTGRES_PASSWORD: dev_postgres_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks:
+      - curby-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U curby_user -d curby"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    container_name: curby-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - curby-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes --requirepass dev_redis_password
+
+  mongodb:
+    image: mongo:latest
+    container_name: curby-mongodb-dev
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: dev_mongodb_password
+      MONGODB_INITDB_DATABASE: curby
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    networks:
+      - curby-network
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/curby --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: curby-kafka-dev
+    environment:
+      KAKFA_NODE_ID: 1
+      KAKFA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:29093
+      KAKFA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    networks:
+      - curby-network
+    restart: unless-stopped
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: curby-localstack-dev
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      SERVICES: s3,secretsmanager,rds
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+      DOCKER_HOST: unix:///var/run/docker.sock
+      LOCALSTACK_HOST: localstack
+    volumes:
+      - localstack-data:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../scripts/localstack_init.sh:/etc/localstack/init/ready.d/init.sh
+    networks:
+      - curby-network
+    restart: unless-stopped
+
+volumes:
+  backend-venv:
+  frontend-node-modules:
+  pgdata:
+  redis-data:
+  mongodb-data:
+  mongodb-config:
+  kafka-data:
+  localstack-data:
+
+networks:
+  curby-network:
+    driver: bridge

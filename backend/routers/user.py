@@ -2,10 +2,10 @@ from fastapi import APIRouter, Request, Response, Depends
 from pydantic import BaseModel, EmailStr
 from fastapi_csrf_protect import CsrfProtect
 
-from backend.main import app, limiter
-from backend.infra.db_tagging import MongoDB
-from backend.infra.storage import S3
-from backend.infra.sessions import Redis
+from config.limiter_config import limiter
+from infra.db_tagging import MongoDB
+from infra.storage import S3
+from infra.sessions import Redis
 
 router = APIRouter(
     prefix="/user",
@@ -24,6 +24,7 @@ class NormalDetailsResponse(BaseModel):
     created_at: str
     last_login_at: str
     snap_count: int
+    snap_folder_count: int
     
 class OAuthDetailsResponse(BaseModel):
     is_oauth: bool
@@ -33,6 +34,7 @@ class OAuthDetailsResponse(BaseModel):
     created_at: str
     last_login_at: str
     snap_count: int
+    snap_folder_count: int
     
 DetailsResponse = NormalDetailsResponse | OAuthDetailsResponse
 
@@ -41,27 +43,26 @@ class UserError(Exception):
     "Exception for user operations"
     pass
     
-def _raise_user_operation_error(func_name: str, error: Exception) -> None:
+def _raise_user_operation_error(func_name: str, error: Exception, request: Request) -> None:
     error_message = f"Failed to perform user operation in {func_name}: {error}"
-    app.state.logger.log_error(error_message)
+    request.app.state.logger.log_error(error_message)
     raise UserError(error_message) from error
 
 @router.get("/details", response_model=DetailsResponse)
 @limiter.limit("30/minute")
-async def details(request: Request, csrf_protect: CsrfProtect = Depends()):
-    await csrf_protect.validate_csrf(request)
-    
+async def details(request: Request):
     try:
         session_key = request.cookies.get("session_key")
         
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         user_id = session["user_id"]
         
-        user_details = app.state.rds.read_user(user_id)
-        user_preferences_details = app.state.rds.read_user_preference(user_id)
+        user_details = request.app.state.rds.read_user(user_id, request)
+        user_preferences_details = request.app.state.rds.read_user_preference(user_id, request)
     
         details = user_details | user_preferences_details
-        details["snap_count"] = S3.get_snap_count(user_id)
+        details["snap_count"] = S3.get_snap_count(user_id, request)
+        details["snap_folder_count"] = S3.get_snap_folder_count(user_id, request)
         
         if details["is_oauth"]:
             return OAuthDetailsResponse(**details)
@@ -69,7 +70,7 @@ async def details(request: Request, csrf_protect: CsrfProtect = Depends()):
         return NormalDetailsResponse(**details)
     
     except Exception as e:
-        _raise_user_operation_error("details", e)
+        _raise_user_operation_error("details", e, request)
 
 @router.put("/update")
 @limiter.limit("30/minute")
@@ -87,18 +88,18 @@ async def update(
     try:
         session_key = request.cookies.get("session_key")
 
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         user_id = session["user_id"]
         
-        app.state.rds.update_user(user_id, first_name, username, password, email)
+        request.app.state.rds.update_user(user_id, first_name, username, password, email, request)
         
         if theme:
-            app.state.rds.update_user_preference(user_id, theme)
+            request.app.state.rds.update_user_preference(user_id, theme, request)
         
         return Response(status_code=200)
     
     except Exception as e:
-        _raise_user_operation_error("update", e)
+        _raise_user_operation_error("update", e, request)
 
 @router.delete("/account")
 async def delete(
@@ -111,17 +112,17 @@ async def delete(
     try:
         session_key = request.cookies.get("session_key")
         
-        session = Redis.get_session(session_key)
+        session = Redis.get_session(session_key, request)
         user_id = session["user_id"]
         
-        app.state.rds.delete_user_preference(user_id)
-        app.state.rds.delete_user(user_id)
-        Redis.delete_session(session_key)
+        request.app.state.rds.delete_user_preference(user_id, request)
+        request.app.state.rds.delete_user(user_id, request)
+        Redis.delete_session(session_key, request)
         response.delete_cookie("session_key")
-        S3.delete_all_snaps(user_id)
-        MongoDB.delete_all_user_img_tags_and_captions(user_id)
+        S3.delete_all_snaps(user_id, request)
+        MongoDB.delete_all_user_file_tags_and_captions(user_id, request)
         
         return Response(status_code=200)
     
     except Exception as e:
-        _raise_user_operation_error("delete", e)
+        _raise_user_operation_error("delete", e, request)

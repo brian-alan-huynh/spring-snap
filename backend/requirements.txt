@@ -4,7 +4,6 @@ uvicorn[standard]
 gunicorn
 python-dotenv
 pydantic
-pytest
 confluent-kafka
 redis[hiredis]
 fastapi-csrf-protect
@@ -14,5 +13,6 @@ bcrypt
 pyotp
 boto3
 sqlalchemy
+psycopg2-binary
 pymongo
 python-logging-loki

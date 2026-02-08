@@ -1,0 +1,16 @@
+variable "project_name" {
+  description = "Name of the project (used for resource tagging)"
+  type        = string
+  default     = "curby"
+}
+
+variable "owner_email" {
+  description = "Email of the owner of the resources"
+  type        = string
+}
+
+variable "state_bucket_names" {
+  description = "Names for the S3 bucket that will hold Terraform state and lock files for dev and prod"
+  type        = list(string)
+  default     = ["curby-state-dev", "curby-state-prod"]
+}

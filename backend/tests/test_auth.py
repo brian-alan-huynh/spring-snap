@@ -53,7 +53,10 @@ class TestOAuth:
     @patch("backend.utils.login.signup_or_login_oauth")
     @patch("backend.utils.login.redirect_and_set_cookie")
     def test_google_auth_callback(self, mock_redirect, mock_signup, mock_oauth):
+        mock_redirect.return_value = RedirectResponse(url="http://localhost:3000/home", status_code=302)
+        
         mock_oauth.google.authorize_access_token.return_value = {"access_token": "token"}
+        
         mock_oauth.google.parse_id_token.return_value = {
             "sub": "google_user_id",
             "given_name": "John"
@@ -113,6 +116,7 @@ class TestSignupLogin:
 
         app.state.rds.create_user.return_value = "user_id"
         app.state.rds.create_user_preference.return_value = None
+        mock_redirect.return_value = RedirectResponse(url="http://localhost:3000/home", status_code=302)
         mock_redis.add_new_session.return_value = "session_key"
         
         client.post("/api/v1/auth/signup", json=valid_signup_data)
@@ -157,6 +161,7 @@ class TestSignupLogin:
         app.state.rds = Mock()
         
         app.state.rds.check_or_fetch_normal_login_creds.return_value = "user_id"
+        mock_redirect.return_value = RedirectResponse(url="http://localhost:3000/home", status_code=302)
         mock_redis.add_new_session.return_value = "session_key"
         
         client.post("/api/v1/auth/login", json=valid_login_data)
@@ -166,6 +171,7 @@ class TestSignupLogin:
     @patch("backend.infra.sessions.Redis")
     def test_logout(self, mock_redis, mock_csrf):
         client.cookies.set("session_key", "test_session")
+        
         client.post("/api/v1/auth/logout")
         mock_redis.delete_session.assert_called_with("test_session")
 
@@ -214,13 +220,13 @@ class TestErrorHandling:
     @patch("backend.infra.sessions.Redis")
     def test_request_otp_exception(self, mock_redis, valid_signup_data, mock_csrf):
         mock_redis.add_otp.side_effect = Exception("Redis error")
-        response = client.post("/api/v1/auth/request-otp", json=valid_signup_data)
         
+        response = client.post("/api/v1/auth/request-otp", json=valid_signup_data)
         assert response.status_code == 500
 
     @patch("backend.infra.oauth.oauth")
     def test_oauth_exception(self, mock_oauth):
         mock_oauth.google.authorize_redirect.side_effect = Exception("OAuth error")
-        response = client.get("/api/v1/auth/login/google")
         
+        response = client.get("/api/v1/auth/login/google")
         assert response.status_code == 500
